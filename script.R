@@ -9,28 +9,25 @@ library(widyr)
 library(ggraph)
 library(igraph)
 library(topicmodels)
+library(scales)
 
 #Criando as stopwords
-stopwords_pt <- c(stopwords("pt"), stopwords("en"), stopwords(), stopwords("spanish"), "é")
-stopwords_pt_df <- data.frame(word = stopwords_pt)
+stopwords <- c(stopwords("pt"), stopwords("en"), stopwords(), stopwords("spanish"), "é")
 
 setwd("C:\\Users\\Luã Braga\\Desktop\\The shift of Brazilian foreign policy")
 
-################################################################################################
-############################## PARTE 1 - ANÁLISE DE FREQUÊNCIA  ################################
-################################################################################################
+######################################################################################
+############################## ANÁLISE DE FREQUÊNCIA  ################################
+######################################################################################
 
-
-############################ GRÁFICOS DE FREQUÊNCIA ######################################
-
-#Transformando o livro do Amorim em um corpus
+#Transformando os Ministros em um corpus
 diretorio <- getwd()
 corpus <- VCorpus(DirSource(diretorio, pattern = ".pdf"), 
                         readerControl = list(reader = readPDF))
 
 ## Higienização do texto (tudo em caixa baixa e remove números e pontuação)
 corpuslimpo <- tm_map(corpus, content_transformer(tolower))
-corpuslimpo <- tm_map(corpuslimpo, removeWords, stopwords_pt)
+corpuslimpo <- tm_map(corpuslimpo, removeWords, stopwords)
 corpuslimpo <- tm_map(corpuslimpo, removePunctuation)
 corpuslimpo <- tm_map(corpuslimpo, stripWhitespace)
 corpuslimpo <- tm_map(corpuslimpo, removeNumbers)
@@ -38,7 +35,7 @@ corpuslimpo <- tm_map(corpuslimpo, removeNumbers)
 #Transformando em DF
 corpus_df <- data.frame(text=unlist(sapply(corpuslimpo, `[`, "content")), stringsAsFactors=F)
 
-#Vemos que cada linha é uma pág, vamos remover elementos pré e pós-textuais de cada livro (cria subsets só com as páginas de conteúdo de cada livro)
+#Vemos que cada linha é uma pág, vamos remover elementos pré e pós-textuais de cada Ministro (cria subsets só com as páginas de conteúdo de cada Ministro)
 corpus_frame1 <- as.data.frame(corpus_df[c(15:256), 1])
 corpus_frame2 <- as.data.frame(corpus_df[c(17:579), 1])
 
@@ -46,9 +43,13 @@ corpus_frame2 <- as.data.frame(corpus_df[c(17:579), 1])
 names(corpus_frame1) <- c("Texto")
 names(corpus_frame2) <- c("Texto")
 
-#Inseringo coluna Livro
-corpus_frame1$Livro <- c("Amorim")
-corpus_frame2$Livro <- c("Araujo")
+#Inserindo coluna de página
+corpus_frame1$Página <- c(1:242)
+corpus_frame2$Página <- c(1:563)
+
+#Inseringo coluna Ministro
+corpus_frame1$Ministro <- c("Amorim")
+corpus_frame2$Ministro <- c("Araujo")
 
 #Junta os subsets
 corpus_df <- bind_rows(corpus_frame1, corpus_frame2)
@@ -59,11 +60,11 @@ tokens <- corpus_df %>%
 
 #Tabela de frequência
 tokens_freq <- tokens %>%                 
-  group_by(Livro) %>%
+  group_by(Ministro) %>%
   count(Tokens)
 
 #Gráfico de Frequência Amorim
-freq_amorim <- filter(tokens_freq, Livro == "Amorim")
+freq_amorim <- filter(tokens_freq, Ministro == "Amorim")
 
 freq_amorim %>%
   top_n(30) %>%
@@ -76,7 +77,7 @@ freq_amorim %>%
   coord_flip()
 
 #Gráfico de Frequência Araújo
-freq_araujo <- filter(tokens_freq, Livro == "Araujo")
+freq_araujo <- filter(tokens_freq, Ministro == "Araujo")
 
 freq_araujo %>%
   top_n(30) %>%
@@ -91,9 +92,8 @@ freq_araujo %>%
 
 ############################ FREQUÊNCIAS DE PALAVRAS-CHAVE ######################################
 
-### Religião
-freq_rel <- filter(tokens_freq, grepl('deus|cristia|cristã|christ',Tokens))
-
+#Religião e Costumes
+freq_rel <- filter(tokens_freq, grepl('deus|cristia|cristã|christ|família|sexu|gay|abort',Tokens))
 
 freq_rel %>%
   mutate(Tokens = reorder(Tokens, n)) %>%
@@ -103,9 +103,9 @@ freq_rel %>%
   ylab("Frequência") +
   xlab(" ")+
   coord_flip() +
-  facet_wrap(~ Livro)
+  facet_wrap(~ Ministro)
 
-### Meio Ambiente
+#Meio Ambiente
 freq_amb <- filter(tokens_freq, grepl('clima|amazônia|amazon|polui|gases|desmata|queimada|estufa|
                                         ozônio|aquecimento|carbono|co2',Tokens))
 
@@ -117,26 +117,40 @@ freq_amb %>%
   ylab("n") +
   xlab(" ")+
   coord_flip() +
-  facet_wrap(~ Livro)
+  facet_wrap(~ Ministro)
 
-### Organizações e blocos
-freq_ois <- filter(tokens_freq, grepl('cooper|integrac|integraç|onu|oea|mercosul|unasul|prosul|
-                                        ibas|brics|omc|ocde|cplp|asean',Tokens))
+#Economia
+freq_econ <- filter(tokens_freq, grepl('desenvolviment|desigualdade|pobr|privatiz|estati|trabalhador|liberal|classe',Tokens))
 
-freq_ois %>%
-  top_n(20) %>% 
+freq_econ %>%
   mutate(Tokens = reorder(Tokens, n)) %>%
   ggplot(aes(Tokens, n)) +
-  geom_bar(aes(reorder(Tokens, n), n), stat = 'identity', width = 0.7, show.legend = FALSE, fill = "grey65") +
+  geom_bar(aes(reorder(Tokens, n), n), stat = 'identity', width = 0.7, show.legend = FALSE, fill="grey65") +
   geom_text(aes(label=n), vjust = 0.3, size = 4) +
   ylab("Frequência") +
   xlab(" ")+
   coord_flip() +
-  facet_wrap(~ Livro)
+  facet_wrap(~ Ministro)
 
-### Parcerias
-freq_parcs <- filter(tokens_freq, grepl('argentin|venezuel|estadosunid|estaduni|americ|china|cuba|
-                                        índia|rússia|russ|indian|áfrica|african|europ|israel',Tokens))
+
+#Ideologias Políticas
+freq_ideol <- filter(tokens_freq, grepl('social|comunis|globalis|capitalis|imperialis|periferia|
+                                        conservad|revoluc|revolução|racionarismo|reacionário|
+                                        conspir|direita|direiti|esquerda|esquerdi',Tokens))
+
+freq_ideol %>%
+  mutate(Tokens = reorder(Tokens, n)) %>%
+  ggplot(aes(Tokens, n)) +
+  geom_bar(aes(reorder(Tokens, n), n), stat = 'identity', width = 0.7, show.legend = FALSE, fill="grey65") +
+  geom_text(aes(label=n), vjust = 0.3, size = 4) +
+  ylab("Frequência") +
+  xlab(" ")+
+  coord_flip() +
+  facet_wrap(~ Ministro)
+
+#Relações Internacionais
+freq_parcs <- filter(tokens_freq, grepl('cuba|venezuel|estadosunid|estaduni|americ|china|cuba|
+                                        arábia|rússia|russ|europ|israel',Tokens))
 
 freq_parcs %>%
   top_n(20) %>% 
@@ -147,71 +161,30 @@ freq_parcs %>%
   ylab("Frequência") +
   xlab(" ")+
   coord_flip() +
-  facet_wrap(~ Livro)
+  facet_wrap(~ Ministro)
 
-### Economia
-freq_econ <- filter(tokens_freq, grepl('desenvolviment|crescimento|desigualdade|pobreza|privatiz|estatiz',Tokens))
-
-freq_econ %>%
-  mutate(Tokens = reorder(Tokens, n)) %>%
-  ggplot(aes(Tokens, n)) +
-  geom_bar(aes(reorder(Tokens, n), n), stat = 'identity', width = 0.7, show.legend = FALSE, fill="grey65") +
-  geom_text(aes(label=n), vjust = 0.3, size = 4) +
-  ylab("Frequência") +
-  xlab(" ")+
-  coord_flip() +
-  facet_wrap(~ Livro)
-
-### Ideologia
-freq_ideol <- filter(tokens_freq, grepl('social|comunis|globalis|capitalis|imperialis|periferia|conservad',Tokens))
-
-freq_ideol %>%
-  mutate(Tokens = reorder(Tokens, n)) %>%
-  ggplot(aes(Tokens, n)) +
-  geom_bar(aes(reorder(Tokens, n), n), stat = 'identity', width = 0.7, show.legend = FALSE, fill="grey65") +
-  geom_text(aes(label=n), vjust = 0.3, size = 4) +
-  ylab("Frequência") +
-  xlab(" ")+
-  coord_flip() +
-  facet_wrap(~ Livro)
-
-### Defesa e Segurança
-freq_def <- filter(tokens_freq, grepl('armad|defesa|segurança|security|defense|dissuação|fronteiras|exército|marinha|
-                                      aeronáutica|army|terror|espionagem|spy|spionage',Tokens))
-
-freq_def %>%
-  mutate(Tokens = reorder(Tokens, n)) %>%
-  ggplot(aes(Tokens, n)) +
-  geom_bar(aes(reorder(Tokens, n), n), stat = 'identity', width = 0.7, show.legend = FALSE, fill="grey65") +
-  geom_text(aes(label=n), vjust = 0.3, size = 4) +
-  ylab("Frequência") +
-  xlab(" ")+
-  coord_flip() +
-  facet_wrap(~ Livro)
-
-
-################################################################################################
-################### PARTE  - ANÁLISE DE CORRELAÇÃO ENTRE PALAVRAS  #############################
-################################################################################################
-
+########################################################################################
+###################  ANÁLISE DE CORRELAÇÃO ENTRE PALAVRAS  #############################
+########################################################################################
 
 ############################### AMORIM ##############################
 
 #Separando tokens do Amorim e inserindo coluna de página
 corpus_df_amorim <- corpus_df %>%
-  filter(Livro == "Amorim") %>%
-  mutate(Página = row_number()) %>%
+  filter(Ministro == "Amorim") %>%
   unnest_tokens(Tokens, Texto)
 
 #Criando DF com o grau de correlação entre as palavras
 cor_amorim <- corpus_df_amorim %>%
   group_by(Tokens) %>%
+  filter(n() >= 3) %>% 
   pairwise_cor(Tokens, Página, sort = TRUE)
 
 #Observando nuvem de correlações entre palavras (>.35)
 set.seed(2020)
 cor_amorim %>%
   filter(correlation > .35) %>%
+  filter(item1 == c("clima", "amazônia", "desmatamento", "gases", "estufa", "aquecimento")) %>%
   graph_from_data_frame() %>%
   ggraph(layout = "fr") +
   geom_edge_link(aes(edge_alpha = correlation), show.legend = FALSE) +
@@ -219,9 +192,9 @@ cor_amorim %>%
   geom_node_text(aes(label = name), repel = TRUE) +
   theme_void()
 
-#Meio Ambiente
+#
 cor_amorim %>%
-  filter(item1 == c("clima", "amazônia", "desmatamento", "gases", "estufa", "aquecimento")) %>%
+  filter(item1 == c("China")) %>%
   group_by(item1) %>%
   top_n(10) %>%
   ungroup() %>%
@@ -232,3 +205,81 @@ cor_amorim %>%
   ylab("Correlação") +
   xlab(" ") +
   coord_flip()
+
+
+############################### ARAUJO ##############################
+
+
+
+
+
+
+
+
+
+
+
+#######################################################################################
+################### ANÁLISE DE SENTIMENTOS  ###########################################
+#######################################################################################
+
+# carregar DF (vamos usar o LexiconPT, porém há outros. Trata-se de uma decisão por adequação ao tipo do texto analisado)
+data("sentiLex_lem_PT02")
+sent <- sentiLex_lem_PT02
+
+#Renomeando colunas para fazer os joins
+names(sent) <- c("Tokens", "Classe", "Polaridade", "Polaridade Alvo", "Class. de Polaridade")
+
+#Renomeando nomes das classes de palavras
+sent$Classe <- str_replace_all(sent$Classe, "V", "Verbo") 
+sent$Classe <- str_replace_all(sent$Classe, "Adj", "Adjetivo")
+sent$Classe <- str_replace_all(sent$Classe, "N", "Substantivo") 
+
+# acrescentar ao dafaframe principal
+tokens_sent <- inner_join(tokens, sent, by = "Tokens")
+
+#Para calcular polaridade de palavras por página: faz subsets de palavras cada Ministro
+amorim_sent <- as.data.frame(tokens_sent[c(1:1050), c(1:7)])
+araujo_sent <- as.data.frame(tokens_sent[c(1051:4275),c(1:7)])
+
+#Somatório de carga sentimental por página de cada Ministro
+Pol_pag_amorim <- amorim_sent %>%
+  group_by(Página) %>% 
+  summarise (n = sum(Polaridade))
+names(Pol_pag_amorim) <- c("Página", "Pol.Pag")
+
+Pol_pag_araujo <- araujo_sent %>%
+  group_by(Página) %>% 
+  summarise (n = sum(Polaridade))
+names(Pol_pag_araujo) <- c("Página", "Pol.Pag")
+
+#Inserindo polaridades por página nos subsets
+amorim_sent <- inner_join(amorim_sent, Pol_pag_amorim, by = "Página")
+araujo_sent <- inner_join(araujo_sent, Pol_pag_araujo, by = "Página")
+
+#Junta os subsets
+tokens_sent <- bind_rows(amorim_sent, araujo_sent)
+tokens_sent$Pol.Pag <- as.numeric(tokens_sent$Pol.Pag)
+
+#Palavras com carga setimental por ministro
+tokens_sent %>% 
+  ggplot(aes(x = Polaridade, y = Ministro, fill = Ministro)) +
+  geom_bar(stat="identity", width = 0.3) + 
+  labs(x = "Carga Sentimenal", y = "Ministro") +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  theme(legend.position = "none")
+
+#Palavras com carga setimental por página
+tokens_sent %>% 
+  ggplot(aes(x = Página, y = Pol.Pag)) +
+  geom_col(aes(fill = Ministro)) + 
+  labs(x = "Páginas", y = "Carga sentimental")
+
+#Palavras com carga setimental por classe gramatical
+tokens_sent %>% 
+  ggplot(aes(x = Polaridade, y = Classe, fill = Ministro)) +
+  geom_bar(stat="identity", width = 0.3) + 
+  labs(x = "Carga Sentimenal", y = " ") +
+  facet_wrap(~ Ministro) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  theme(legend.position = "none")
