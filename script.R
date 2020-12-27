@@ -10,6 +10,8 @@ library(ggraph)
 library(igraph)
 library(topicmodels)
 library(scales)
+library(janitor)
+options(scipen = 999)
 
 #Criando as stopwords
 stopwords <- c(stopwords("pt"), stopwords("en"), stopwords(), stopwords("spanish"), "é")
@@ -148,6 +150,21 @@ freq_ideol %>%
   coord_flip() +
   facet_wrap(~ Ministro)
 
+#Intelectuais e Filósofos
+freq_fil <- filter(tokens_freq, grepl('marx|smith|burke|nietzsch|weber|
+                                        durkheim|locke|hobbes|rousseau|
+                                        gramsc|aristóte|platã|plato|sócrat|marquiavel',Tokens))
+
+freq_fil %>%
+  mutate(Tokens = reorder(Tokens, n)) %>%
+  ggplot(aes(Tokens, n, fill = Ministro)) +
+  geom_bar(aes(reorder(Tokens, n), n), stat = 'identity', width = 0.7, show.legend = FALSE) +
+  geom_text(aes(label=n), vjust = 0.3, size = 4) +
+  ylab("Frequência") +
+  xlab(" ")+
+  coord_flip() +
+  facet_wrap(~ Ministro)
+
 #Relações Internacionais
 freq_parcs <- filter(tokens_freq, grepl('cuba|venezuel|estadosunid|estaduni|americ|china|cuba|
                                         arábia|rússia|russ|europ|israel',Tokens))
@@ -180,7 +197,6 @@ cor_amorim <- corpus_df_amorim %>%
   filter(n() >= 3) %>% 
   pairwise_cor(Tokens, Página, sort = TRUE)
 
-# Palavras mais relacionadas com eixo Ideologias Políticas: como o corte foi em 3, não há.
 
 
 ############################### ARAUJO ##############################
@@ -208,7 +224,26 @@ cor_araujo %>%
   geom_bar(stat = 'identity', fill = "skyblue1") + 
   geom_text(aes(label=round(correlation, digits = 1)), vjust = 0.3, size = 4) +
   facet_wrap(~ item1, scales = "free") +
-  coord_flip()
+  coord_flip() + 
+  ylab("correlação") +
+  xlab(" ")
+
+# Correlações no eixo Intelectuais e filósofos
+cor_araujo %>%
+  mutate(item1 = fct_reorder(item1, correlation, .desc = FALSE)) %>%
+  filter(item1 %in% c("nietzsche", "marxista")) %>%
+  group_by(item1) %>%
+  top_n(15) %>%
+  ungroup() %>%
+  mutate(item2 = reorder(item2, correlation)) %>%
+  ggplot(aes(item2, correlation)) +
+  geom_bar(stat = 'identity', fill = "skyblue1") + 
+  geom_text(aes(label=round(correlation, digits = 1)), vjust = 0.3, size = 4) +
+  facet_wrap(~ item1, scales = "free") +
+  coord_flip() +
+  coord_flip() + 
+  ylab("correlação") +
+  xlab(" ")
 
 
 #######################################################################################
@@ -230,7 +265,9 @@ sent$Classe <- str_replace_all(sent$Classe, "N", "Substantivo")
 # acrescentar ao dafaframe principal
 tokens_sent <- inner_join(tokens, sent, by = "Tokens")
 
-#Para calcular polaridade de palavras por página: faz subsets de palavras cada Ministro
+## Polaridade por página
+
+#faz subsets de palavras cada Ministro
 amorim_sent <- as.data.frame(tokens_sent[c(1:1049), c(1:7)])
 araujo_sent <- as.data.frame(tokens_sent[c(1050:4275),c(1:7)])
 
@@ -253,69 +290,38 @@ araujo_sent <- inner_join(araujo_sent, Pol_pag_araujo, by = "Página")
 tokens_sent <- bind_rows(amorim_sent, araujo_sent)
 tokens_sent$Pol.Pag <- as.numeric(tokens_sent$Pol.Pag)
 
-#Total de palavras com carga setimental por ministro
-tokens_sent %>% 
-  ggplot(aes(x = Polaridade, y = Ministro, fill = Ministro)) +
-  geom_bar(stat="identity", width = 0.3) + 
-  labs(x = "Carga Sentimenal", y = " ") +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  theme(legend.position = "none")
-
 #Palavras com carga setimental por página
 tokens_sent %>% 
   ggplot(aes(x = Página, y = Pol.Pag)) +
   geom_col(aes(fill = Ministro)) + 
-  labs(x = "Páginas", y = "Carga sentimental")
+  labs(x = "Páginas", y = "carga sentimental")
 
-#Palavras com carga setimental por classe gramatical
-tokens_sent %>% 
-  ggplot(aes(x = Polaridade, y = Classe, fill = Ministro)) +
-  geom_bar(stat="identity", width = 0.3) + 
-  labs(x = "Carga Sentimenal", y = " ") +
-  facet_wrap(~ Ministro) +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  theme(legend.position = "none")
 
-##Palavras que contribuíram mais para a carga sentimental do Amorim
+## Proporção de palavras com sentimentos e neutras
 
-#Sumarização das palavras com carga sentimental
-amorim_sent_geral <- amorim_sent %>%                 
-  group_by(Tokens) %>% 
-  summarise (n = sum(Polaridade)) %>%
-  arrange(desc(n))
+#Proporção de sentimentos em cada livro
+pol_araujo <- data.frame(prop.table(table(araujo_sent$Polaridade))*100)
+pol_amorim <- data.frame(prop.table(table(amorim_sent$Polaridade))*100)
 
-#Filtrando as 10 com maior carga positiva e positiva
-amorim_sent_pos <- as.data.frame(amorim_sent_geral[c(1:10), c(1:2)])
-amorim_sent_neg <- as.data.frame(amorim_sent_geral[c(274:283), c(1:2)])
-amorim_sent_geral <- bind_rows(amorim_sent_pos, amorim_sent_neg)
+#Inseringo coluna Ministro
+pol_amorim$Ministro <- c("Amorim")
+pol_araujo$Ministro <- c("Araujo")
 
-amorim_sent_geral %>% 
-  mutate(Tokens = fct_reorder(Tokens, n, .desc = FALSE)) %>%
-  ggplot(aes(x = n, y = Tokens)) +
-  geom_bar(stat = 'identity', width = 0.7, show.legend = FALSE, fill = "salmon1") + 
-  geom_text(aes(label=n), vjust = 0.3, size = 4) +
-  labs(x = "Carga Sentimenal", y = " ") +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  theme(legend.position = "none")
+#Junta os subsets
+polaridades <- bind_rows(pol_amorim, pol_araujo)
 
-## Palavras que contribuíram mais para a carga sentimental do Araujo
+#Renomeia as strings
+polaridades$Var1 <- str_replace_all(polaridades$Var1, "0", "Neutra")
+polaridades$Var1 <- str_replace_all(polaridades$Var1, "-1", "Negativa") 
+polaridades$Var1 <- str_replace_all(polaridades$Var1, "1", "Positiva")
 
-#Sumarização das palavras com carga sentimental
-araujo_sent_geral <- araujo_sent %>%                 
-  group_by(Tokens) %>% 
-  summarise (n = sum(Polaridade)) %>%
-  arrange(desc(n))
-
-#Filtrando as 10 com maior carga positiva e positiva
-araujo_sent_pos <- as.data.frame(araujo_sent_geral[c(1:10), c(1:2)])
-araujo_sent_neg <- as.data.frame(araujo_sent_geral[c(545:554), c(1:2)])
-araujo_sent_geral <- bind_rows(araujo_sent_pos, araujo_sent_neg)
-
-araujo_sent_geral %>% 
-  mutate(Tokens = fct_reorder(Tokens, n, .desc = FALSE)) %>%
-  ggplot(aes(x = n, y = Tokens)) +
-  geom_bar(stat = 'identity', width = 0.7, show.legend = FALSE, fill = "skyblue1") + 
-  geom_text(aes(label=n), vjust = 0.3, size = 4) +
-  labs(x = "Carga Sentimenal", y = " ") +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  theme(legend.position = "none")
+#Palavras com sentimentos e neutras por livro
+polaridades %>%
+  mutate(Var1 = reorder(Var1, Freq)) %>%
+  ggplot(aes(Var1, Freq, fill = Ministro)) +
+  geom_bar(aes(reorder(Var1, Freq), Freq), stat = 'identity', width = 0.7, show.legend = FALSE) +
+  geom_text(aes(label=round(Freq, digits = 1)), vjust = 0.3, size = 4) +
+  ylab("% de palavras") +
+  xlab("carga sentimental")+
+  coord_flip() +
+  facet_wrap(~ Ministro)
