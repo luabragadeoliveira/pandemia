@@ -2,184 +2,190 @@
 library(tm)
 library(tidyverse)
 library(tidytext)
-library(wordcloud)
-library(RColorBrewer)
 library(pdftools)
 library(stringr)
-library(gridExtra)
 library(lexiconPT)
 library(widyr)
 library(ggraph)
 library(igraph)
-library(xtable)
 library(topicmodels)
 
 #Criando as stopwords
-stopwords_pt <- c(stopwords("pt"), stopwords("en"), stopwords(), stopwords("spanish"), "È")
+stopwords_pt <- c(stopwords("pt"), stopwords("en"), stopwords(), stopwords("spanish"), "√©")
 stopwords_pt_df <- data.frame(word = stopwords_pt)
 
-setwd("C:\\Users\\Lu„ Braga\\Desktop\\The shift of Brazilian foreign policy")
+setwd("C:\\Users\\Lu√£ Braga\\Desktop\\The shift of Brazilian foreign policy")
 
 ################################################################################################
-############################## PARTE 1 - AN¡LISE DE FREQU NCIA  ################################
+############################## PARTE 1 - AN√ÅLISE DE FREQU√äNCIA  ################################
 ################################################################################################
 
 
-############################ GR¡FICOS DE FREQU NCIA ######################################
+############################ GR√ÅFICOS DE FREQU√äNCIA ######################################
 
-#Juntando ambos os livros em um corpus
+#Transformando o livro do Amorim em um corpus
 diretorio <- getwd()
 corpus <- VCorpus(DirSource(diretorio, pattern = ".pdf"), 
                         readerControl = list(reader = readPDF))
 
-## HigienizaÁ„o do texto (tudo em caixa baixa e remove n˙meros e pontuaÁ„o)
+## Higieniza√ß√£o do texto (tudo em caixa baixa e remove n√∫meros e pontua√ß√£o)
 corpuslimpo <- tm_map(corpus, content_transformer(tolower))
 corpuslimpo <- tm_map(corpuslimpo, removeWords, stopwords_pt)
 corpuslimpo <- tm_map(corpuslimpo, removePunctuation)
 corpuslimpo <- tm_map(corpuslimpo, stripWhitespace)
 corpuslimpo <- tm_map(corpuslimpo, removeNumbers)
 
+#Transformando em DF
+corpus_df <- data.frame(text=unlist(sapply(corpuslimpo, `[`, "content")), stringsAsFactors=F)
 
-#Criando matriz de frequÍncia
-frequencia <- as.matrix(DocumentTermMatrix(corpuslimpo))
+#Vemos que cada linha √© uma p√°g, vamos remover elementos pr√© e p√≥s-textuais de cada livro (cria subsets s√≥ com as p√°ginas de conte√∫do de cada livro)
+corpus_frame1 <- as.data.frame(corpus_df[c(15:256), 1])
+corpus_frame2 <- as.data.frame(corpus_df[c(17:579), 1])
 
-#Tranformando em DF
-frequenciadf <- as.data.frame(frequencia)
+#Renomeando colunas
+names(corpus_frame1) <- c("Texto")
+names(corpus_frame2) <- c("Texto")
 
-#Inserindo coluna de autor
-frequenciadf$Gest„o <- c("Amorim", "Araujo") 
+#Inseringo coluna Livro
+corpus_frame1$Livro <- c("Amorim")
+corpus_frame2$Livro <- c("Araujo")
 
-#Transpondo dados
-frequenciadf2 <- gather(frequenciadf, "Termo", "FrequÍncia", 1:17869)# <- colunas que ser„o transformadas (todas exceto autor, a ˙ltima)
+#Junta os subsets
+corpus_df <- bind_rows(corpus_frame1, corpus_frame2)
 
-#Gr·fico de FrequÍncia Amorim
+#Tokenizando
+tokens <- corpus_df %>%
+  unnest_tokens(Tokens, Texto)
 
-freq_amorim <- filter(frequenciadf2, Gest„o == "Amorim")
+#Tabela de frequ√™ncia
+tokens_freq <- tokens %>%                 
+  group_by(Livro) %>%
+  count(Tokens)
+
+#Gr√°fico de Frequ√™ncia Amorim
+freq_amorim <- filter(tokens_freq, Livro == "Amorim")
 
 freq_amorim %>%
-  top_n(30, FrequÍncia) %>%
-  mutate(Termo = reorder(Termo, FrequÍncia)) %>%
-  ggplot(aes(Termo, FrequÍncia)) +
-  geom_bar(aes(reorder(Termo, FrequÍncia), FrequÍncia), stat = 'identity', width = 0.7, show.legend = FALSE, fill="red") +
-  ylab("FrequÍncia") +
+  top_n(30) %>%
+  mutate(Tokens = reorder(Tokens, n)) %>%
+  ggplot(aes(Tokens, n)) +
+  geom_bar(aes(reorder(Tokens, n), n), stat = 'identity', width = 0.7, show.legend = FALSE, fill = "grey65") +
+  geom_text(aes(label=n), vjust = 0.3, size = 4) +
+  ylab("Frequ√™ncia") +
   xlab(" ")+
   coord_flip()
 
-#Gr·fico de FrequÍncia de Ara˙jo
-
-freq_araujo <- filter(frequenciadf2, Gest„o == "Araujo")
+#Gr√°fico de Frequ√™ncia Ara√∫jo
+freq_araujo <- filter(tokens_freq, Livro == "Araujo")
 
 freq_araujo %>%
-  top_n(30, FrequÍncia) %>%
-  mutate(Termo = reorder(Termo, FrequÍncia)) %>%
-  ggplot(aes(Termo, FrequÍncia)) +
-  geom_bar(aes(reorder(Termo, FrequÍncia), FrequÍncia), stat = 'identity', width = 0.7, show.legend = FALSE, fill="blue") +
-  ylab("FrequÍncia") +
+  top_n(30) %>%
+  mutate(Tokens = reorder(Tokens, n)) %>%
+  ggplot(aes(Tokens, n)) +
+  geom_bar(aes(reorder(Tokens, n), n), stat = 'identity', width = 0.7, show.legend = FALSE, fill = "grey65") +
+  geom_text(aes(label=n), vjust = 0.3, size = 4) +
+  ylab("Frequ√™ncia") +
   xlab(" ")+
   coord_flip()
 
 
-############################ AN¡LISE DE PALAVRAS-CHAVE ######################################
+############################ AN√ÅLISE DE PALAVRAS-CHAVE ######################################
 
-# Eixos Tem·ticos:
-#   Blocos e OIs: cooperaÁ„o, integraÁ„o, onu, oea, mercosul, unasul, prosul, ibas, brics, omc, ocde
-#   Parcerias: argentina, venezuela, eua, china, cuba, Ìndia, r˙ssia, ·frica, europa, europeia, jap„o, israel
-#   Ideologia: socialismo, socialista, comunismo, comunista, globalismo, capitalismo, imperialismo, imperialista, imperialistas, periferia, conservador, conservadorismo, liberal, liberalismo
-#   Religi„o: fÈ, cristianismo, crist„o, crist„, intoler‚ncia, deus
-#   Economia: desenvolvimento, crescimento, renda, desigualdade, pobreza, fome
-#   Defesa e SeguranÁa: armadas, defesa, seguranÁa, dissuaÁ„o, fronteiras, exÈrcito, marinha, aeron·utica
-#   Meio Ambiente: amazÙnia, pantanal, poluiÁ„o, clima, clim·ticas, queimadas
-
-### Religi„o
-freq_rel <- filter(frequenciadf2, grepl('deus|crist„o|cristo|crist„|cristianismo', Termo))
+### Religi√£o
+freq_rel <- filter(tokens_freq, grepl('deus|crist√£o|cristo|crist√£|cristianismo', Tokens))
 
 freq_rel %>%
-  top_n(20, FrequÍncia) %>%
-  mutate(Termo = reorder(Termo, FrequÍncia)) %>%
-  ggplot(aes(Termo, FrequÍncia)) +
-  geom_bar(aes(reorder(Termo, FrequÍncia), FrequÍncia), stat = 'identity', width = 0.7, show.legend = FALSE) +
-  ylab("FrequÍncia") +
+  mutate(Tokens = reorder(Tokens, n)) %>%
+  ggplot(aes(Tokens, n)) +
+  geom_bar(aes(reorder(Tokens, n), n), stat = 'identity', width = 0.7, show.legend = FALSE, fill = "grey65") +
+  geom_text(aes(label=n), vjust = 0.3, size = 4) +
+  ylab("Frequ√™ncia") +
   xlab(" ")+
   coord_flip() +
-  facet_wrap(~ Gest„o)
+  facet_wrap(~ Livro)
 
 ### Meio Ambiente
-freq_amb <- filter(frequenciadf2, grepl('amazÙnia|pantanal|poluiÁ„o|clima|gases|atmosfera|estufa|aquecimento', Termo))
+freq_amb <- filter(tokens_freq, grepl('amaz√¥nia|pantanal|polui√ß√£o|clima|gases|atmosfera|estufa|aquecimento', Tokens))
 
 freq_amb %>%
-  top_n(8, FrequÍncia) %>%
-  mutate(Termo = reorder(Termo, FrequÍncia)) %>%
-  ggplot(aes(Termo, FrequÍncia)) +
-  geom_bar(aes(reorder(Termo, FrequÍncia), FrequÍncia), stat = 'identity', width = 0.7, show.legend = FALSE) +
-  ylab("FrequÍncia") +
+  mutate(Tokens = reorder(Tokens, n)) %>%
+  ggplot(aes(Tokens, n)) +
+  geom_bar(aes(reorder(Tokens, n), n), stat = 'identity', width = 0.7, show.legend = FALSE, fill = "grey65") +
+  geom_text(aes(label=n), vjust = 0.3, size = 4) +
+  ylab("n") +
   xlab(" ")+
   coord_flip() +
-  facet_wrap(~ Gest„o)
+  facet_wrap(~ Livro)
 
-### OrganizaÁıes e blocos
-freq_ois <- filter(frequenciadf2, grepl('cooperaÁ„o|integraÁ„o|onu|oea|mercosul|unasul|prosul|ibas|brics|omc|ocde|zopacas',Termo))
+### Organiza√ß√µes e blocos
+freq_ois <- filter(tokens_freq, grepl('coopera√ß√£o|integra√ß√£o|onu|oea|mercosul|unasul|prosul|ibas|brics|omc|ocde|zopacas',Tokens))
 
 freq_ois %>%
-  top_n(20, FrequÍncia) %>%
-  mutate(Termo = reorder(Termo, FrequÍncia)) %>%
-  ggplot(aes(Termo, FrequÍncia)) +
-  geom_bar(aes(reorder(Termo, FrequÍncia), FrequÍncia), stat = 'identity', width = 0.7, show.legend = FALSE) +
-  ylab("FrequÍncia") +
+  top_n(10, n) %>%
+  mutate(Tokens = reorder(Tokens, n)) %>%
+  ggplot(aes(Tokens, n)) +
+  geom_bar(aes(reorder(Tokens, n), n), stat = 'identity', width = 0.7, show.legend = FALSE, fill = "grey65") +
+  geom_text(aes(label=n), vjust = 0.3, size = 4) +
+  ylab("Frequ√™ncia") +
   xlab(" ")+
   coord_flip() +
-  facet_wrap(~ Gest„o)
+  facet_wrap(~ Livro)
 
 ### Parcerias
-freq_parcs <- filter(frequenciadf2, grepl('argentina|venezuela|eua|china|cuba|Ìndia|r˙ssia|·frica|europa|europeia|jap„o|israel',Termo))
+freq_parcs <- filter(tokens_freq, grepl('argentina|venezuela|eua|china|cuba|√≠ndia|r√∫ssia|√°frica|europa|europeia|jap√£o|israel',Tokens))
 
 freq_parcs %>%
-  top_n(20, FrequÍncia) %>%
-  mutate(Termo = reorder(Termo, FrequÍncia)) %>%
-  ggplot(aes(Termo, FrequÍncia)) +
-  geom_bar(aes(reorder(Termo, FrequÍncia), FrequÍncia), stat = 'identity', width = 0.7, show.legend = FALSE) +
-  ylab("FrequÍncia") +
+  top_n(13, n) %>%
+  mutate(Tokens = reorder(Tokens, n)) %>%
+  ggplot(aes(Tokens, n)) +
+  geom_bar(aes(reorder(Tokens, n), n), stat = 'identity', width = 0.7, show.legend = FALSE, fill = "grey65") +
+  geom_text(aes(label=n), vjust = 0.3, size = 4) +
+  ylab("Frequ√™ncia") +
   xlab(" ")+
   coord_flip() +
-  facet_wrap(~ Gest„o)
+  facet_wrap(~ Livro)
 
 ### Economia
 
-freq_econ <- filter(frequenciadf2, grepl('desenvolvimento|crescimento|desigualdade|pobreza',Termo))
+freq_econ <- filter(tokens_freq, grepl('desenvolvimento|crescimento|desigualdade|pobreza',Tokens))
 
 freq_econ %>%
-  mutate(Termo = reorder(Termo, FrequÍncia)) %>%
-  ggplot(aes(Termo, FrequÍncia)) +
-  geom_bar(aes(reorder(Termo, FrequÍncia), FrequÍncia), stat = 'identity', width = 0.7, show.legend = FALSE) +
-  ylab("FrequÍncia") +
+  mutate(Tokens = reorder(Tokens, n)) %>%
+  ggplot(aes(Tokens, n)) +
+  geom_bar(aes(reorder(Tokens, n), n), stat = 'identity', width = 0.7, show.legend = FALSE, fill="grey65") +
+  geom_text(aes(label=n), vjust = 0.3, size = 4) +
+  ylab("Frequ√™ncia") +
   xlab(" ")+
   coord_flip() +
-  facet_wrap(~ Gest„o)
+  facet_wrap(~ Livro)
 
 ### Ideologia
 
-freq_ideol <- filter(frequenciadf2, grepl('socialismo|socialista|comunismo|comunista|globalismo|capitalismo|imperialismo|imperialista|imperialistas|periferia|conservador|conservadorismo|liberal|liberalismo',Termo))
+freq_ideol <- filter(tokens_freq, grepl('socialismo|socialista|comunismo|comunista|globalismo|capitalismo|imperialismo|imperialista|imperialistas|periferia|conservador|conservadorismo|liberal|liberalismo',Tokens))
 
 freq_ideol %>%
-  mutate(Termo = reorder(Termo, FrequÍncia)) %>%
-  ggplot(aes(Termo, FrequÍncia)) +
-  geom_bar(aes(reorder(Termo, FrequÍncia), FrequÍncia), stat = 'identity', width = 0.7, show.legend = FALSE) +
-  ylab("FrequÍncia") +
+  mutate(Tokens = reorder(Tokens, n)) %>%
+  ggplot(aes(Tokens, n)) +
+  geom_bar(aes(reorder(Tokens, n), n), stat = 'identity', width = 0.7, show.legend = FALSE, fill="grey65") +
+  geom_text(aes(label=n), vjust = 0.3, size = 4) +
+  ylab("Frequ√™ncia") +
   xlab(" ")+
   coord_flip() +
-  facet_wrap(~ Gest„o)
+  facet_wrap(~ Livro)
 
-### Defesa e SeguranÁa
+### Defesa e Seguran√ßa
 
-freq_def <- filter(frequenciadf2, grepl('armadas|defesa|seguranÁa|dissuaÁ„o|fronteiras|exÈrcito|marinha|aeron·utica',Termo))
+freq_def <- filter(tokens_freq, grepl('armadas|defesa|seguran√ßa|dissua√ß√£o|fronteiras|ex√©rcito|marinha|aeron√°utica',Tokens))
 
 freq_def %>%
-  mutate(Termo = reorder(Termo, FrequÍncia)) %>%
-  ggplot(aes(Termo, FrequÍncia)) +
-  geom_bar(aes(reorder(Termo, FrequÍncia), FrequÍncia), stat = 'identity', width = 0.7, show.legend = FALSE) +
-  ylab("FrequÍncia") +
+  mutate(Tokens = reorder(Tokens, n)) %>%
+  ggplot(aes(Tokens, n)) +
+  geom_bar(aes(reorder(Tokens, n), n), stat = 'identity', width = 0.7, show.legend = FALSE, fill="grey65") +
+  geom_text(aes(label=n), vjust = 0.3, size = 4) +
+  ylab("Frequ√™ncia") +
   xlab(" ")+
   coord_flip() +
-  facet_wrap(~ Gest„o)
+  facet_wrap(~ Livro)
 
 
 ################################################################################################
@@ -188,16 +194,16 @@ freq_def %>%
 
 ############################################# AMORIM ###########################################
 
-#Determine diretÛrio
-setwd("C:\\Users\\Lu„ Braga\\Desktop\\The shift of Brazilian foreign policy")
+#Determine diret√≥rio
+setwd("C:\\Users\\Lu√£ Braga\\Desktop\\The shift of Brazilian foreign policy")
 
 # Crie o Corpus
 diretorio <- getwd() # change this to directory where files are located
 amorimcorpus <- VCorpus(DirSource(diretorio, pattern = "amorim.pdf"), 
                         readerControl = list(reader = readPDF))
 
-#Ajustes e TransformaÁıes
-## HigienizaÁ„o do texto (tudo em caixa baixa e remove n˙meros e pontuaÁ„o)
+#Ajustes e Transforma√ß√µes
+## Higieniza√ß√£o do texto (tudo em caixa baixa e remove n√∫meros e pontua√ß√£o)
 amorimlimpo <- tm_map(amorimcorpus, content_transformer(tolower))
 amorimlimpo <- tm_map(amorimlimpo, removeWords, stopwords_pt)
 amorimlimpo <- tm_map(amorimlimpo, removePunctuation)
@@ -224,12 +230,12 @@ amorimbi_filt <- amorimbi_sep %>%
 amorimbi_filt_cont <- amorimbi_filt %>%
   count(word1, word2, sort = TRUE)
 
-#Gr·fico com somente os bi-grams mais comuns
+#Gr√°fico com somente os bi-grams mais comuns
 amorim_graph <- amorimbi_filt_cont %>%
   filter(n %in% (15:10000)) %>%
   graph_from_data_frame()
 
-#Gr·fico de rede de bi-grams mais frequentes
+#Gr√°fico de rede de bi-grams mais frequentes
 set.seed(2020)
 
 a <- grid::arrow(type = "closed", length = unit(.10, "inches"))
@@ -244,16 +250,16 @@ ggraph(amorim_graph, layout = "fr") +
 
 ############################################# ARAUJO ###########################################
 
-#Determine diretÛrio
-setwd("C:\\Users\\Lu„ Braga\\Desktop\\The shift of Brazilian foreign policy")
+#Determine diret√≥rio
+setwd("C:\\Users\\Lu√£ Braga\\Desktop\\The shift of Brazilian foreign policy")
 
 # Crie o Corpus
 diretorio <- getwd() # change this to directory where files are located
 araujocorpus <- VCorpus(DirSource(diretorio, pattern = "araujo.pdf"), 
                         readerControl = list(reader = readPDF))
 
-#Ajustes e TransformaÁıes
-## HigienizaÁ„o do texto (tudo em caixa baixa e remove n˙meros e pontuaÁ„o)
+#Ajustes e Transforma√ß√µes
+## Higieniza√ß√£o do texto (tudo em caixa baixa e remove n√∫meros e pontua√ß√£o)
 araujolimpo <- tm_map(araujocorpus, content_transformer(tolower))
 araujolimpo <- tm_map(araujolimpo, removeWords, stopwords_pt)
 araujolimpo <- tm_map(araujolimpo, removePunctuation)
@@ -280,12 +286,12 @@ araujobi_filt <- araujobi_sep %>%
 araujobi_filt_cont <- araujobi_filt %>%
   count(word1, word2, sort = TRUE)
 
-#Gr·fico com somente os bi-grams mais comuns
+#Gr√°fico com somente os bi-grams mais comuns
 araujo_graph <- araujobi_filt_cont %>%
   filter(n %in% (15:10000)) %>%
   graph_from_data_frame()
 
-#Gr·fico de rede de bi-grams mais frequentes
+#Gr√°fico de rede de bi-grams mais frequentes
 set.seed(2020)
 
 a <- grid::arrow(type = "closed", length = unit(.10, "inches"))
@@ -297,3 +303,8 @@ ggraph(araujo_graph, layout = "fr") +
   geom_node_point(color = "lightblue", size = 3) +
   geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
   theme_void()
+
+
+################################################################################################
+############################## PARTE  - ASSOCIA√á√ÉO DE PALAVRAS  ###############################################
+################################################################################################
