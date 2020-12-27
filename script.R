@@ -89,10 +89,11 @@ freq_araujo %>%
   coord_flip()
 
 
-############################ ANÁLISE DE PALAVRAS-CHAVE ######################################
+############################ FREQUÊNCIAS DE PALAVRAS-CHAVE ######################################
 
 ### Religião
-freq_rel <- filter(tokens_freq, grepl('deus|cristão|cristo|cristã|cristianismo', Tokens))
+freq_rel <- filter(tokens_freq, grepl('deus|cristia|cristã|christ',Tokens))
+
 
 freq_rel %>%
   mutate(Tokens = reorder(Tokens, n)) %>%
@@ -105,7 +106,8 @@ freq_rel %>%
   facet_wrap(~ Livro)
 
 ### Meio Ambiente
-freq_amb <- filter(tokens_freq, grepl('amazônia|pantanal|poluição|clima|gases|atmosfera|estufa|aquecimento', Tokens))
+freq_amb <- filter(tokens_freq, grepl('clima|amazônia|amazon|polui|gases|desmata|queimada|estufa|
+                                        ozônio|aquecimento|carbono|co2',Tokens))
 
 freq_amb %>%
   mutate(Tokens = reorder(Tokens, n)) %>%
@@ -118,10 +120,11 @@ freq_amb %>%
   facet_wrap(~ Livro)
 
 ### Organizações e blocos
-freq_ois <- filter(tokens_freq, grepl('cooperação|integração|onu|oea|mercosul|unasul|prosul|ibas|brics|omc|ocde|zopacas',Tokens))
+freq_ois <- filter(tokens_freq, grepl('cooper|integrac|integraç|onu|oea|mercosul|unasul|prosul|
+                                        ibas|brics|omc|ocde|cplp|asean',Tokens))
 
 freq_ois %>%
-  top_n(10, n) %>%
+  top_n(20) %>% 
   mutate(Tokens = reorder(Tokens, n)) %>%
   ggplot(aes(Tokens, n)) +
   geom_bar(aes(reorder(Tokens, n), n), stat = 'identity', width = 0.7, show.legend = FALSE, fill = "grey65") +
@@ -132,10 +135,11 @@ freq_ois %>%
   facet_wrap(~ Livro)
 
 ### Parcerias
-freq_parcs <- filter(tokens_freq, grepl('argentina|venezuela|eua|china|cuba|índia|rússia|áfrica|europa|europeia|japão|israel',Tokens))
+freq_parcs <- filter(tokens_freq, grepl('argentin|venezuel|estadosunid|estaduni|americ|china|cuba|
+                                        índia|rússia|russ|indian|áfrica|african|europ|israel',Tokens))
 
 freq_parcs %>%
-  top_n(13, n) %>%
+  top_n(20) %>% 
   mutate(Tokens = reorder(Tokens, n)) %>%
   ggplot(aes(Tokens, n)) +
   geom_bar(aes(reorder(Tokens, n), n), stat = 'identity', width = 0.7, show.legend = FALSE, fill = "grey65") +
@@ -146,8 +150,7 @@ freq_parcs %>%
   facet_wrap(~ Livro)
 
 ### Economia
-
-freq_econ <- filter(tokens_freq, grepl('desenvolvimento|crescimento|desigualdade|pobreza',Tokens))
+freq_econ <- filter(tokens_freq, grepl('desenvolviment|crescimento|desigualdade|pobreza|privatiz|estatiz',Tokens))
 
 freq_econ %>%
   mutate(Tokens = reorder(Tokens, n)) %>%
@@ -160,8 +163,7 @@ freq_econ %>%
   facet_wrap(~ Livro)
 
 ### Ideologia
-
-freq_ideol <- filter(tokens_freq, grepl('socialismo|socialista|comunismo|comunista|globalismo|capitalismo|imperialismo|imperialista|imperialistas|periferia|conservador|conservadorismo|liberal|liberalismo',Tokens))
+freq_ideol <- filter(tokens_freq, grepl('social|comunis|globalis|capitalis|imperialis|periferia|conservad',Tokens))
 
 freq_ideol %>%
   mutate(Tokens = reorder(Tokens, n)) %>%
@@ -174,8 +176,8 @@ freq_ideol %>%
   facet_wrap(~ Livro)
 
 ### Defesa e Segurança
-
-freq_def <- filter(tokens_freq, grepl('armadas|defesa|segurança|dissuação|fronteiras|exército|marinha|aeronáutica',Tokens))
+freq_def <- filter(tokens_freq, grepl('armad|defesa|segurança|security|defense|dissuação|fronteiras|exército|marinha|
+                                      aeronáutica|army|terror|espionagem|spy|spionage',Tokens))
 
 freq_def %>%
   mutate(Tokens = reorder(Tokens, n)) %>%
@@ -189,122 +191,44 @@ freq_def %>%
 
 
 ################################################################################################
-############################## PARTE  - BIGRAMS  ###############################################
+################### PARTE  - ANÁLISE DE CORRELAÇÃO ENTRE PALAVRAS  #############################
 ################################################################################################
 
-############################################# AMORIM ###########################################
 
-#Determine diretório
-setwd("C:\\Users\\Luã Braga\\Desktop\\The shift of Brazilian foreign policy")
+############################### AMORIM ##############################
 
-# Crie o Corpus
-diretorio <- getwd() # change this to directory where files are located
-amorimcorpus <- VCorpus(DirSource(diretorio, pattern = "amorim.pdf"), 
-                        readerControl = list(reader = readPDF))
+#Separando tokens do Amorim e inserindo coluna de página
+corpus_df_amorim <- corpus_df %>%
+  filter(Livro == "Amorim") %>%
+  mutate(Página = row_number()) %>%
+  unnest_tokens(Tokens, Texto)
 
-#Ajustes e Transformações
-## Higienização do texto (tudo em caixa baixa e remove números e pontuação)
-amorimlimpo <- tm_map(amorimcorpus, content_transformer(tolower))
-amorimlimpo <- tm_map(amorimlimpo, removeWords, stopwords_pt)
-amorimlimpo <- tm_map(amorimlimpo, removePunctuation)
-amorimlimpo <- tm_map(amorimlimpo, stripWhitespace)
-amorimlimpo <- tm_map(amorimlimpo, removeNumbers)
+#Criando DF com o grau de correlação entre as palavras
+cor_amorim <- corpus_df_amorim %>%
+  group_by(Tokens) %>%
+  pairwise_cor(Tokens, Página, sort = TRUE)
 
-#Transforme o Corpus para formato Tidy
-amorimtidy <- tidy(amorimlimpo)
-
-#Tokenizando por bi-grams
-amorimbi <- amorimtidy %>% 
-  unnest_tokens(bigram, text, token = "ngrams", n=2)
-
-#Separando bi-grams para filtrar novas stopwords
-amorimbi_sep <- amorimbi %>%
-  separate(bigram, c("word1", "word2"), sep = " ")
-
-#Filtrando novas stopwords
-amorimbi_filt <- amorimbi_sep %>%
-  filter(!word1 %in% stopwords_pt_df$word) %>%
-  filter(!word2 %in% stopwords_pt_df$word)
-
-#Novos bi-grams filtrados
-amorimbi_filt_cont <- amorimbi_filt %>%
-  count(word1, word2, sort = TRUE)
-
-#Gráfico com somente os bi-grams mais comuns
-amorim_graph <- amorimbi_filt_cont %>%
-  filter(n %in% (15:10000)) %>%
-  graph_from_data_frame()
-
-#Gráfico de rede de bi-grams mais frequentes
+#Observando nuvem de correlações entre palavras (>.35)
 set.seed(2020)
-
-a <- grid::arrow(type = "closed", length = unit(.10, "inches"))
-
-ggraph(amorim_graph, layout = "fr") +
-  geom_edge_link(aes(edge_alpha = n),
-                 show.legend = FALSE,
-                 arrow = a, end_cap = circle(.05, "inches")) +
-  geom_node_point(color = "lightblue", size = 3) +
-  geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
+cor_amorim %>%
+  filter(correlation > .35) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = correlation), show.legend = FALSE) +
+  geom_node_point(color = "lightblue", size = 5) +
+  geom_node_text(aes(label = name), repel = TRUE) +
   theme_void()
 
-############################################# ARAUJO ###########################################
-
-#Determine diretório
-setwd("C:\\Users\\Luã Braga\\Desktop\\The shift of Brazilian foreign policy")
-
-# Crie o Corpus
-diretorio <- getwd() # change this to directory where files are located
-araujocorpus <- VCorpus(DirSource(diretorio, pattern = "araujo.pdf"), 
-                        readerControl = list(reader = readPDF))
-
-#Ajustes e Transformações
-## Higienização do texto (tudo em caixa baixa e remove números e pontuação)
-araujolimpo <- tm_map(araujocorpus, content_transformer(tolower))
-araujolimpo <- tm_map(araujolimpo, removeWords, stopwords_pt)
-araujolimpo <- tm_map(araujolimpo, removePunctuation)
-araujolimpo <- tm_map(araujolimpo, stripWhitespace)
-araujolimpo <- tm_map(araujolimpo, removeNumbers)
-
-#Transforme o Corpus para formato Tidy
-araujotidy <- tidy(araujolimpo)
-
-#Tokenizando por bi-grams
-araujobi <- araujotidy %>% 
-  unnest_tokens(bigram, text, token = "ngrams", n=2)
-
-#Separando bi-grams para filtrar novas stopwords
-araujobi_sep <- araujobi %>%
-  separate(bigram, c("word1", "word2"), sep = " ")
-
-#Filtrando novas stopwords
-araujobi_filt <- araujobi_sep %>%
-  filter(!word1 %in% stopwords_pt_df$word) %>%
-  filter(!word2 %in% stopwords_pt_df$word)
-
-#Novos bi-grams filtrados
-araujobi_filt_cont <- araujobi_filt %>%
-  count(word1, word2, sort = TRUE)
-
-#Gráfico com somente os bi-grams mais comuns
-araujo_graph <- araujobi_filt_cont %>%
-  filter(n %in% (15:10000)) %>%
-  graph_from_data_frame()
-
-#Gráfico de rede de bi-grams mais frequentes
-set.seed(2020)
-
-a <- grid::arrow(type = "closed", length = unit(.10, "inches"))
-
-ggraph(araujo_graph, layout = "fr") +
-  geom_edge_link(aes(edge_alpha = n),
-                 show.legend = FALSE,
-                 arrow = a, end_cap = circle(.05, "inches")) +
-  geom_node_point(color = "lightblue", size = 3) +
-  geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
-  theme_void()
-
-
-################################################################################################
-############################## PARTE  - ASSOCIAÇÃO DE PALAVRAS  ###############################################
-################################################################################################
+#Meio Ambiente
+cor_amorim %>%
+  filter(item1 == c("clima", "amazônia", "desmatamento", "gases", "estufa", "aquecimento")) %>%
+  group_by(item1) %>%
+  top_n(10) %>%
+  ungroup() %>%
+  mutate(item2 = reorder(item2, correlation)) %>%
+  ggplot(aes(item2, correlation)) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~ item1, scales = "free") +
+  ylab("Correlação") +
+  xlab(" ") +
+  coord_flip()
