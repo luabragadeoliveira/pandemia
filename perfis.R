@@ -11,10 +11,12 @@ library(igraph)
 library(topicmodels)
 library(scales)
 library(janitor)
+library(wordcloud)
 options(scipen = 999)
+theme_set(theme_bw())
 
 #Criando as stopwords
-stopwords <- c(stopwords("pt"), stopwords("en"), stopwords(), stopwords("spanish"), "È")
+stopwords <- c(stopwords("pt"), stopwords("en"), stopwords(), stopwords("spanish"), "√©")
 
 
 ######################################################################################
@@ -23,14 +25,14 @@ stopwords <- c(stopwords("pt"), stopwords("en"), stopwords(), stopwords("spanish
 
 ################################ AZEVEDO ######################
 
-setwd("C:\\Users\\Lu„ Braga\\Desktop\\omd\\perfil\\azevedo")
+setwd("C:\\Users\\Lu√£ Braga\\Desktop\\omd\\perfis\\azevedo")
 
 #Montando corpus
 diretorio <- getwd()
 azevedo <- VCorpus(DirSource(diretorio, pattern = ".pdf"), 
                   readerControl = list(reader = readPDF))
 
-## HigienizaÁ„o do texto
+## Higieniza√ß√£o do texto
 azevedolimpo <- tm_map(azevedo, content_transformer(tolower))
 azevedolimpo <- tm_map(azevedolimpo, removeWords, stopwords)
 azevedolimpo <- tm_map(azevedolimpo, removePunctuation)
@@ -47,15 +49,19 @@ names(azevedodf) <- c("texto")
 azevedodf$ministro <- c('Fernando Azevedo')
 
 #Numerando os documentos
-azevedodf$n.documento <- c(1:843)
+azevedodf$n.documento <- c(1:61)
+
+#Removendo rownames
+azevedodf <- remove_rownames(azevedodf) 
 
 
 ################################ TODOS ######################
 
 corpusdf <- bind_rows(azevedodf, lunadf, jungmanndf, rebelodf, amorimdf, jobimdf)
+corpusdf <- azevedodf
 
 ######################################################################################
-############################## AN¡LISE DE FREQU NCIA (UNIGRAMS e BIGRAMS) ############
+############################## AN√ÅLISE DE FREQU√äNCIA (UNIGRAMS e BIGRAMS) ############
 ######################################################################################
 
 #Tokenizando
@@ -66,111 +72,102 @@ tokens <- corpusdf %>%
 tokens_bi <- corpusdf %>%
   unnest_tokens(bigrams, texto, token = "ngrams", n = 2)
 
-#FrequÍncia de unigrams
-tokens_freq <- tokens %>%                 
+#Wordcloud
+pal2 <- brewer.pal(9,"BrBG")
+wordcloud(tokens$tokens, min.freq=2,max.words=200, random.order=F, colors=pal2)
+
+#Frequ√™ncia de unigrams Azevedo
+azevedo_freq <- tokens %>%
+  filter(ministro %in% c("Fernando Azevedo")) %>%
   count(tokens)
 
-tokens_freq %>%
+azevedo_freq %>%
   top_n(30) %>%
   mutate(tokens = reorder(tokens, n)) %>%
   ggplot(aes(tokens, n)) +
-  geom_bar(aes(reorder(tokens, n), n), stat = 'identity', width = 0.7, show.legend = FALSE, fill = "salmon1") +
-  geom_text(aes(label=n), vjust = 0.3, size = 4) +
-  ylab("FrequÍncia") +
+  geom_col(aes(reorder(tokens, n), n), width = 0.6, show.legend = FALSE, fill = "green1") +
+  geom_point(col="green3", size=6.5) + 
+  geom_text(aes(label=n), color="black", size=3, vjust = 0.3) +
+  ylab("Frequ√™ncia") +
   xlab(" ")+
-  coord_flip()
+  coord_flip() +
+  theme_bw() +
+  labs(title="Palavras mais utilizadas pelo Ministro Fernando Azevedo", 
+       subtitle="Dados coletados em artigos, discursos, palestras e demais manifesta√ß√µes p√∫blicas")
 
-#FrequÍncia de bigrams
-tokens_freq_bi <- tokens_bi %>%                 
+#Frequ√™ncia de bigrams
+azevedo_freq_bi <- tokens_bi %>%                 
+  filter(ministro %in% c("Fernando Azevedo")) %>%
   count(bigrams)
 
-tokens_freq_bi %>%
+azevedo_freq_bi %>%
   top_n(30) %>%
   mutate(bigrams = reorder(bigrams, n)) %>%
   ggplot(aes(bigrams, n)) +
-  geom_bar(aes(reorder(bigrams, n), n), stat = 'identity', width = 0.7, show.legend = FALSE, fill = "salmon1") +
-  geom_text(aes(label=n), vjust = 0.3, size = 4) +
-  ylab("FrequÍncia") +
+  geom_col(aes(reorder(bigrams, n), n), width = 0.6, show.legend = FALSE, fill = "green1") +
+  geom_point(col="green3", size=6.5) + 
+  geom_text(aes(label=n), color="black", size=3, vjust = 0.3) +
+  ylab("Frequ√™ncia") +
   xlab(" ")+
-  coord_flip()
-
-############################ FREQU NCIAS DE PALAVRAS-CHAVE ######################################
-
-freq_rel <- filter(tokens_freq, grepl('deus|cristia|crist„|christian|famÌlia|sexu|gay|abort',tokens))
-
-freq_rel %>%
-  mutate(tokens = reorder(tokens, n)) %>%
-  ggplot(aes(tokens, n)) +
-  geom_bar(aes(reorder(tokens, n), n), stat = 'identity', width = 0.7, show.legend = FALSE) +
-  geom_text(aes(label=n), vjust = 0.3, size = 4) +
-  ylab("FrequÍncia") +
-  xlab(" ")+
-  coord_flip()
-
+  coord_flip() +
+  theme_bw() +
+  labs(title="Palavras mais utilizadas pelo Ministro Fernando Azevedo (bi-grams)", 
+       subtitle="Dados coletados em artigos, discursos, palestras e demais manifesta√ß√µes p√∫blicas")
 
 ########################################################################
-###################  AN¡LISE DE CLUSTERS ###############################
+###################  AN√ÅLISE DE CLUSTERS ###############################
 ########################################################################
 
-#Criando matriz com os top20 termos
-top_tokens <- tokens_freq %>%
+#Criando matriz com os top20 termos azevedo
+top_azevedo_tokens <- azevedo_freq %>%
   top_n(20, n) %>% 
   remove_rownames %>% 
   column_to_rownames(var="tokens")
 
-#Calculando dist‚ncia euclideana entre os termos
-escala <- scale(top_tokens)
-distancia <- dist(escala , method = "euclidean")
+#Calculando dist√¢ncia euclideana entre os termos
+azevedo_escala <- scale(top_azevedo_tokens)
+azevedo_distancia <- dist(azevedo_escala , method = "euclidean")
 
-#ClusterizaÁ„o
-clusters <- hclust(distancia , method = "ward.D2")
-plot(clusters)
-
-
-# ClusterizaÁ„o de termos especÌficos
-
-tokens_paises <- tokens_freq %>%
-  filter(tokens %in% c("china", "r˙ssia", "cuba", "venezuela", "amÈrica")) %>% 
-  remove_rownames %>% 
-  column_to_rownames(var="tokens")
-
-escala_paises <- scale(tokens_paises)
-distancia_paises <- dist(escala_paises , method = "euclidean")
-cluster_paises <- hclust(distancia_paises , method = "ward.D2")
-plot(cluster_paises)
+#Clusteriza√ß√£o
+azevedo_clusters <- hclust(azevedo_distancia , method = "ward.D2")
+plot(azevedo_clusters)
 
 ########################################################################
-###################  AN¡LISE DE CORRELA«√O ENTRE PALAVRAS  #############
+###################  AN√ÅLISE DE CORRELA√á√ÉO ENTRE PALAVRAS  #############
 ########################################################################
 
-#Criando DF com o grau de correlaÁ„o entre as palavras por tipo de documento
-cor <- tokens %>%
+#Criando DF com o grau de correla√ß√£o entre as palavras por tipo de documento
+azevedo_cor <- tokens %>%
+  filter(ministro %in% c("Fernando Azevedo")) %>%
   group_by(tokens) %>%
-  filter(n() >= 9) %>% 
-  pairwise_cor(tokens, n.discurso, sort = TRUE)
+  filter(n() >= 0) %>% 
+  pairwise_cor(tokens, n.documento, sort = TRUE)
 
 #Principais termos correlacionados com palavras selecionadas
-cor %>%
+azevedo_cor %>%
   mutate(item1 = fct_reorder(item1, correlation, .desc = FALSE)) %>%
-  filter(item1 %in% c("comunismo", "globalismo", "esquerda")) %>%
+  filter(item1 %in% c("defesa", "seguran√ßa", "brasil")) %>%
   group_by(item1) %>%
   top_n(15) %>%
   ungroup() %>%
   mutate(item2 = reorder(item2, correlation)) %>%
   ggplot(aes(item2, correlation)) +
-  geom_bar(stat = 'identity', fill = "skyblue1") + 
-  geom_text(aes(label=round(correlation, digits = 1)), vjust = 0.3, size = 4) +
+  geom_col(aes(reorder(item2, correlation), correlation), width = 0.6, show.legend = FALSE, fill = "green1") +
+  geom_point(col="green3", size=6.5) + 
+  geom_text(aes(label=round(correlation, digits = 1)), color = "black", vjust = 0.3, size = 4) +
   facet_wrap(~ item1, scales = "free") +
   coord_flip() + 
-  ylab("correlaÁ„o") +
-  xlab(" ")
+  ylab("correla√ß√£o") +
+  xlab(" ") +
+  labs(title="Principais correla√ß√µes de palavras com o termo Defesa e Seguran√ßa", 
+       subtitle="Dados coletados em artigos, discursos, palestras e demais manifesta√ß√µes p√∫blicas")
 
 
 #######################################################################################
-################### AN¡LISE DE SENTIMENTOS  ###########################################
+################### AN√ÅLISE DE SENTIMENTOS  ###########################################
 #######################################################################################
 
-# carregar DF (vamos usar o LexiconPT, porÈm h· outros. Trata-se de uma decis„o por adequaÁ„o ao tipo do texto analisado)
+# carregar DF (vamos usar o LexiconPT, por√©m h√° outros. Trata-se de uma decis√£o por adequa√ß√£o ao tipo do texto analisado)
 data("sentiLex_lem_PT02")
 sent <- sentiLex_lem_PT02
 
@@ -182,23 +179,23 @@ sent$classe <- str_replace_all(sent$classe, "V", "Verbo")
 sent$classe <- str_replace_all(sent$classe, "Adj", "Adjetivo")
 sent$classe <- str_replace_all(sent$classe, "N", "Substantivo") 
 
-# acrescentar valÍncias de sentimento ao dafaframe principal (mantÈm sÛ as palavras com carga sentimental, negativa ou positiva)
+# acrescentar val√™ncias de sentimento ao dafaframe principal (mant√©m s√≥ as palavras com carga sentimental, negativa ou positiva)
 tokens_sent <- inner_join(tokens, sent, by = "tokens")
 
-#faz subsets de cada tipo de documento
-discursos_sent <- as.data.frame(filter(tokens_sent, grepl('discurso', tipo)))
+#faz subsets de cada ministro
+discursos_sent <- as.data.frame(filter(tokens_sent, grepl('Azevedo', ministro)))
 
-########## Palavras que contribuÌram mais para a carga sentimental por tipo de documento
+########## Palavras que contribu√≠ram mais para a carga sentimental por tipo de documento
 
-#SumarizaÁ„o das palavras com carga sentimental
+#Sumariza√ß√£o das palavras com carga sentimental
 discursos_sent_geral <- discursos_sent %>%                 
   group_by(tokens) %>% 
   summarise (n = sum(polaridade)) %>%
   arrange(desc(n))
 
 #Filtrando as 10 com maior carga positiva e positiva
-discursos_sent_pos <- as.data.frame(filter(discursos_sent_geral, n > 15))
-discursos_sent_neg <- as.data.frame(filter(discursos_sent_geral, n < -4))
+discursos_sent_pos <- as.data.frame(filter(discursos_sent_geral, n > 0))
+discursos_sent_neg <- as.data.frame(filter(discursos_sent_geral, n < 0))
 discursos_sent_geral <- bind_rows(discursos_sent_pos, discursos_sent_neg)
 
 discursos_sent_geral %>% 
@@ -210,9 +207,13 @@ discursos_sent_geral %>%
   geom_vline(xintercept = 0, linetype = "dashed") +
   theme(legend.position = "none")
 
+
 #######################################################################################
-################### AN¡LISE DE CORRELA«√O ENTRE MINISTROS  ############################
+################### AN√ÅLISE DE CORRELA√á√ÉO ENTRE MINISTROS  ############################
 #######################################################################################
+
+
+
 
 
 
