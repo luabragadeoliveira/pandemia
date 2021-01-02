@@ -29,6 +29,8 @@ stopwords <- read.csv("C:\\Users\\Luã Braga\\Desktop\\omd\\discursos\\stopwords
 ############################## IMPORTANTO OS DADOS ###################################
 ######################################################################################
 
+# Fonte: https://www.gov.br/defesa/pt-br/acesso-a-informacao/institucional-2/ministro-da-defesa/discurso-do-ministro-da-defesa/ministro-de-estado-da-defesa
+
 ################################ AZEVEDO ######################
 
 setwd("C:\\Users\\Luã Braga\\Desktop\\omd\\discursos\\azevedo")
