@@ -1,6 +1,5 @@
 #Carregar pacotes
 library(tm)
-library(stm)
 library(tidyverse)
 library(tidytext)
 library(pdftools)
@@ -13,7 +12,7 @@ library(topicmodels)
 library(scales)
 library(janitor)
 library(wordcloud)
-library(ape)
+library(ggdendro)
 library(BiocManager)
 library(Rgraphviz)
 library(lattice)
@@ -161,11 +160,31 @@ tokens_freq <- tokens %>%
   group_by(ministro) %>%
   count(tokens)
 
+############################ FREQUÊNCIA DE DISCURSOS POR ANO ######################
+
+#Tabela de frequência de discursos por ano
+discursos_freq <- corpusdf %>%
+  group_by(ministro) %>%
+  count(data)
+
+discursos_freq %>%
+  ggplot(aes(data, n)) +
+  geom_line() +
+  ylab("Frequência") +
+  xlab(" ")+
+  facet_grid(ministro ~.)+
+  labs(title= "Quais Ministros da Defesa produziram mais discursos e artigos?",
+       subtitle = "Comparação do volume de discursos e artigos produzidos por ano pelos Ministros",
+       caption="Fonte: Observatório do Ministério da Defesa",
+       y = "Quantidade")
+
+
 ############################ FREQUÊNCIAS DE PALAVRAS-CHAVE ######################
 
-freq_pcs <- filter(tokens_freq, grepl('desenvolvimento|cooperação|entorno|dissusão|estratégia',tokens))
-
-freq_pcs %>%
+tokens_freq %>%
+  filter(tokens %in% c("argentina", "bolívia", "chile", "colômbia",
+                       "equador", "guiana", "paraguai", "peru", "suriname", 
+                       "uruguai", "venezuela")) %>%
   mutate(tokens = reorder(tokens, n)) %>%
   ggplot(aes(tokens, n)) +
   geom_col(aes(reorder(tokens, n), n), width = 0.1, show.legend = FALSE, fill = "green3") +
@@ -174,15 +193,21 @@ freq_pcs %>%
   ylab("Frequência") +
   xlab(" ")+
   coord_flip() +
-  facet_wrap(~ ministro)
+  facet_wrap(~ ministro)+
+  labs(title="A América do Sul nos discursos dos Ministros da Defesa",
+       subtitle = "Ênfase estimada pela frequência de citações dos países sul-americanos \npelos Ministros em discursos e artigos",
+       caption="Fonte: Observatório do Ministério da Defesa",
+       y = "",
+       x = "Frequência")
+
 
 ################################ AZEVEDO ######################
 
 #Wordcloud
 pal2 <- brewer.pal(9,"BrBG")
-wordcloud(azevedolimpo, min.freq=2,max.words=200, random.order=F, colors=pal2)
+wordcloud(azevedolimpo, min.freq=2,max.words=500, random.order=F, colors=pal2)
 
-#Frequência de unigrams
+#Frequência
 azevedo_freq <- tokens %>%
   filter(ministro %in% c("Fernando Azevedo")) %>%
   count(tokens)
@@ -197,9 +222,11 @@ azevedo_freq %>%
   ylab("Frequência") +
   xlab(" ")+
   coord_flip() +
-  theme_bw() +
-  labs(title="Palavras mais utilizadas pelo Ministro Fernando Azevedo", 
-       subtitle="Dados coletados em artigos, discursos, palestras e demais manifestações públicas")
+  labs(title= "Quais foram os assuntos mais abordados pelo Ministro \nFernando Azevedo?",
+       subtitle = "Palavras mais proferidas pelo Ministro em discursos e artigos",
+       caption="Fonte: Observatório do Ministério da Defesa",
+       y = "",
+       x = "Frequência")
 
 
 ################################ AMORIM ######################
@@ -224,153 +251,68 @@ amorim_freq %>%
   xlab(" ")+
   coord_flip() +
   theme_bw() +
-  labs(title="Palavras mais utilizadas pelo Ministro Celso Amorim", 
-       subtitle="Dados coletados em artigos, discursos, palestras e demais manifestações públicas")
+  labs(title= "Quais foram os assuntos mais abordados pelo Ministro \nCelso Amorim?",
+       subtitle = "Palavras mais proferidas pelo Ministro em discursos e artigos",
+       caption="Fonte: Observatório do Ministério da Defesa",
+       y = "",
+       x = "Frequência")
 
 
-########################################################################
-###################  ANÁLISE DE CLUSTERS ###############################
-########################################################################
+################################ SILVA E LUNA ######################
 
-################################ AZEVEDO ######################
+#Wordcloud
+pal2 <- brewer.pal(9,"BrBG")
+wordcloud(lunalimpo, min.freq=2,max.words=200, random.order=F, colors=pal2)
 
-#Criando matriz com os top20 termos de azevedo
-top_azevedo_tokens <- azevedo_freq %>%
-  top_n(20, n) %>% 
-  remove_rownames %>% 
-  column_to_rownames(var="tokens")
+#Frequência de unigrams
+luna_freq <- tokens %>%
+  filter(ministro %in% c("Joaquim Silva e Luna")) %>%
+  count(tokens)
 
-#Calculando distância euclideana entre os termos
-azevedo_escala <- scale(top_azevedo_tokens)
-azevedo_distancia <- dist(azevedo_escala , method = "euclidean")
-
-#Clusterização
-azevedo_clusters <- hclust(azevedo_distancia , method = "ward.D2")
-plot(as.phylo(azevedo_clusters), cex = 0.6, label.offset = 0.09)
-
-################################ AMORIM ######################
-
-#Criando matriz com os top20 termos de amorim
-top_amorim_tokens <- amorim_freq %>%
-  top_n(20, n) %>% 
-  remove_rownames %>% 
-  column_to_rownames(var="tokens")
-
-#Calculando distância euclideana entre os termos
-amorim_escala <- scale(top_amorim_tokens)
-amorim_distancia <- dist(amorim_escala , method = "euclidean")
-
-#Clusterização
-amorim_clusters <- hclust(amorim_distancia , method = "ward.D2")
-plot(as.phylo(amorim_clusters), cex = 0.6, label.offset = 0.09)
-
-########################################################################
-###################  ANÁLISE DE CORRELAÇÃO ENTRE PALAVRAS  #############
-########################################################################
-
-#Crie a Matriz Termo-Frequência
-dtm <- DocumentTermMatrix(transformacao)
-inspect(dtmpalavra)
-
-#Determine o corte de palavras cuja associação será analisada
-Allpalavras <- as.matrix(dtmpalavra)
-frequencia <- sort(colSums(Allpalavras), decreasing = TRUE)
-corte <- quantile(frequencia, probs = 0.99) # valor mínimo de frequência escolhido. Nesse caso, deu 4 palavras.
-
-# Gráfico de frequência das palavras do corte
-barchart(co ~ seq_along(co),
-         data = data.frame(co = frequencia[frequencia > corte]),
-         axis = axis.grid,
-         horizontal = FALSE,
-         scales = list(
-           x = list(rot = 45, labels = names(frequencia)[frequencia >corte])),
-         panel = function(x, y, ...) {
-           panel.barchart(x, y, ...)
-           panel.text(x, y + 2, y)
-         })
-# Gráfico de associação de palavras do corte
-
-freq.terms <- findFreqTerms(dtmpalavra, lowfreq = corte)
-
-plot(dtmpalavra, term = freq.terms, corThreshold = 0.5, weighting = TRUE)
-
-################################ AZEVEDO ######################
-
-#Criando DF com o grau de correlação entre as palavras por pagina
-azevedo_cor <- tokens %>%
-  filter(ministro %in% c("Fernando Azevedo")) %>%
-  group_by(tokens) %>%
-  filter(n() >= 0) %>% 
-  pairwise_cor(tokens, pagina, sort = TRUE)
-
-#Principais termos correlacionados com palavras selecionadas
-azevedo_cor %>%
-  mutate(item1 = fct_reorder(item1, correlation, .desc = FALSE)) %>%
-  filter(item1 %in% c("defesa", "segurança")) %>%
-  group_by(item1) %>%
-  top_n(10, correlation) %>%
-  ungroup() %>%
-  mutate(item2 = reorder(item2, correlation)) %>%
-  ggplot(aes(item2, correlation)) +
-  geom_col(aes(reorder(item2, correlation), correlation), width = 0.6, show.legend = FALSE, fill = "green1") +
+luna_freq %>%
+  top_n(20, n) %>%
+  mutate(tokens = reorder(tokens, n)) %>%
+  ggplot(aes(tokens, n)) +
+  geom_col(aes(reorder(tokens, n), n), width = 0.6, show.legend = FALSE, fill = "green1") +
   geom_point(col="green3", size=6.5) + 
-  geom_text(aes(label=round(correlation, digits = 1)), color = "black", vjust = 0.3, size = 4) +
-  facet_wrap(~ item1, scales = "free") +
-  coord_flip() + 
-  ylab("correlação") +
-  xlab(" ") +
-  labs(title="Principais correlações feitas pelo Ministro Fernando Azevedo", 
-       subtitle="Dados coletados em artigos, discursos, palestras e demais manifestações públicas")
-
-
-################################ AMORIM ######################
-
-#Criando DF com o grau de correlação entre as palavras por pagina
-amorim_cor <- tokens %>%
-  filter(ministro %in% c("Celso Amorim")) %>%
-  group_by(tokens) %>%
-  filter(n() >= 3) %>% 
-  pairwise_cor(tokens, pagina, sort = TRUE)
-
-#Principais termos correlacionados com palavras selecionadas
-amorim_cor %>%
-  mutate(item1 = fct_reorder(item1, correlation, .desc = FALSE)) %>%
-  filter(item1 %in% c("entorno", "cooperação", "desenvolvimento")) %>%
-  group_by(item1) %>%
-  top_n(10, correlation) %>%
-  ungroup() %>%
-  mutate(item2 = reorder(item2, correlation)) %>%
-  ggplot(aes(item2, correlation)) +
-  geom_col(aes(reorder(item2, correlation), correlation), width = 0.3, show.legend = FALSE, fill = "green1") +
-  geom_point(col="green3", size=6.5) + 
-  geom_text(aes(label=round(correlation, digits = 1)), color = "black", vjust = 0.3, size = 4) +
-  facet_wrap(~ item1, scales = "free") +
-  coord_flip() + 
-  ylab("correlação") +
-  xlab(" ") +
-  labs(title="Principais correlações feitas pelo Ministro Celso Amorim", 
-       subtitle="Dados coletados em artigos, discursos, palestras e demais manifestações públicas")
-
+  geom_text(aes(label=n), color="black", size=3, vjust = 0.3) +
+  ylab("Frequência") +
+  xlab(" ")+
+  coord_flip() +
+  theme_bw() +
+  labs(title= "Quais foram os assuntos mais abordados pelo Ministro \nSilva e Luna?",
+       subtitle = "Palavras mais proferidas pelo Ministro em discursos e artigos",
+       caption="Fonte: Observatório do Ministério da Defesa",
+       y = "",
+       x = "Frequência")
 
 #######################################################################################
 ################### ANÁLISE DE CORRELAÇÃO ENTRE MINISTROS  ############################
 #######################################################################################
 
-############ CORRELAÇÃO ENTRE TEXTOS ################
 
-#Crie um df com o grau de correlação entre cada Ministro, por pares
-ministro_cor <- tokens_freq %>%
-  pairwise_cor(ministro, tokens, n, sort = TRUE)
+############ AGRUPAMENTO HIERÁRQUICO ##################
 
-#Gráfico com as correlação (correlação significativa: >=0.8 ou <=-0.8)
-ministro_cor %>%
-  graph_from_data_frame() %>%
-  ggraph(layout = "kk") +
-  geom_edge_link(aes(alpha = correlation, width = correlation)) +
-  geom_node_point(size = 9, color="Gray") +
-  geom_node_text(aes(label = name), repel = TRUE) +
-  theme_minimal() +
-  labs(x = "", y = "")
+#Transformando tabela de frequência em matriz Ministro x Termos
+matrix <- tokens_freq %>% 
+  spread(tokens, n, fill = NA, convert = FALSE) %>% 
+  remove_rownames %>% 
+  column_to_rownames(var="ministro")
+
+#Calculando distância euclideana entre os Ministros
+distancia <- dist(matrix , method = "euclidean")
+
+#Clusterizando pelo método Ward.D2
+clusters <- hclust(distancia , method = "ward.D2")
+
+#Dendrograma 
+clusters %>% 
+  ggdendrogram(rotate = TRUE, size = 2, labels=TRUE, leaf_labels = TRUE) +
+  labs(title="O quanto se parecem os Ministros da Defesa?",
+       subtitle = "Similaridade estimada pela técnica de Clusterização Aglomerativa, \na partir da distância euclideana entre as frequências de emprego de \npalavras por cada Ministro",
+       caption="Fonte: Observatório do Ministério da Defesa",
+       y = "Similaridade (Distância Euclideana)",
+       x = "")
 
 ########### CORRELAÇÃO NO EMPREGO DE TERMOS ###########
 
@@ -385,7 +327,7 @@ proporcao_tokens <- tokens %>%
 
 proporcao_tokens %>% 
   ggplot(aes(x = proporcao, y = `Fernando Azevedo`, 
-                        color = abs(`Fernando Azevedo` - proporcao))) +
+             color = abs(`Fernando Azevedo` - proporcao))) +
   geom_abline(color = "black", lty = 2) +
   geom_jitter(alpha = 0.1, size = 2.5, width = 0.3, height = 0.3) +
   geom_text(aes(label = tokens), check_overlap = TRUE, vjust = 1.5) +
@@ -395,4 +337,10 @@ proporcao_tokens %>%
                        low = "green1", high = "green4") +
   facet_wrap(~ministro, ncol = 3) +
   theme(legend.position="none") +
-  labs(y = "Fernando Azevedo", x = NULL)
+  labs(y = "Fernando Azevedo", x = NULL)+
+  labs(title="O quanto são similares as palavras empregadas pelo atual \nMinistro e pelos Ministros anteriores?",
+       subtitle = "Palavras mais próximas à linha diagonal aparecem com frequências similares \nem ambos os conjuntos de discursos e artigos",
+       caption="Fonte: Observatório do Ministério da Defesa",
+       y = "Fernando Azevedo",
+       x = "")
+
