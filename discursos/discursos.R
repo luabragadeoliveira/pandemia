@@ -13,7 +13,6 @@ library(scales)
 library(janitor)
 library(wordcloud)
 library(ggdendro)
-library(BiocManager)
 library(Rgraphviz)
 library(lattice)
 library(latticeExtra)
@@ -21,15 +20,14 @@ library(latticeExtra)
 options(scipen = 999)
 theme_set(theme_bw())
 
-
-#Criando stopwords já adaptadas ao corpus
-stopwords <- read.csv("C:\\Users\\Luã Braga\\Desktop\\omd\\discursos\\stopwords_discursos.csv", header = TRUE, sep = ";")
-
 ######################################################################################
-############################## IMPORTANTO OS DADOS ###################################
+############################## IMPORTANTO E PREPRANDO OS DADOS #######################
 ######################################################################################
 
 # Fonte: https://www.gov.br/defesa/pt-br/acesso-a-informacao/institucional-2/ministro-da-defesa/discurso-do-ministro-da-defesa/ministro-de-estado-da-defesa
+
+#Criando stopwords já adaptadas ao corpus
+stopwords <- read.csv("C:\\Users\\Luã Braga\\Desktop\\omd\\discursos\\stopwords_discursos.csv", header = TRUE, sep = ";")
 
 ################################ AZEVEDO ######################
 
@@ -145,12 +143,88 @@ lunadf$data <- str_sub(lunadf$data, start=0, end=10)
 #Convertendo
 lunadf$data <- as.Date(lunadf$data, "%d-%m-%Y")
 
+################################ WAGNER ######################
+
+setwd("C:\\Users\\Luã Braga\\Desktop\\omd\\discursos\\wagner")
+
+#Montando corpus
+diretorio <- getwd()
+wagner <- VCorpus(DirSource(diretorio, pattern = ".pdf"), 
+                readerControl = list(reader = readPDF))
+
+## Higienização do texto
+wagnerlimpo <- tm_map(wagner, content_transformer(tolower))
+wagnerlimpo <- tm_map(wagnerlimpo, removeWords, stopwords$stopwords)
+wagnerlimpo <- tm_map(wagnerlimpo, removePunctuation)
+wagnerlimpo <- tm_map(wagnerlimpo, stripWhitespace)
+wagnerlimpo <- tm_map(wagnerlimpo, removeNumbers)
+
+#Transformando em DF
+wagnerdf <- data.frame(text=unlist(sapply(wagnerlimpo, "content")), stringsAsFactors=F)
+
+#Renomeando coluna
+names(wagnerdf) <- c("texto")
+
+#Coluna: ministro
+wagnerdf$ministro <- c('Jacques Wagner')
+
+#Coluna: pagina
+wagnerdf$pagina <- c(1:41)
+
+#Coluna: data
+wagnerdf <- wagnerdf %>%
+  rownames_to_column(var="data")
+
+#Padronizando a coluna data
+wagnerdf$data <- str_sub(wagnerdf$data, start=0, end=10)
+
+#Convertendo
+wagnerdf$data <- as.Date(wagnerdf$data, "%d-%m-%Y")
+
+################################ JUNGMANN ######################
+
+setwd("C:\\Users\\Luã Braga\\Desktop\\omd\\discursos\\jungmann")
+
+#Montando corpus
+diretorio <- getwd()
+jungmann <- VCorpus(DirSource(diretorio, pattern = ".pdf"), 
+                  readerControl = list(reader = readPDF))
+
+## Higienização do texto
+jungmannlimpo <- tm_map(jungmann, content_transformer(tolower))
+jungmannlimpo <- tm_map(jungmannlimpo, removeWords, stopwords$stopwords)
+jungmannlimpo <- tm_map(jungmannlimpo, removePunctuation)
+jungmannlimpo <- tm_map(jungmannlimpo, stripWhitespace)
+jungmannlimpo <- tm_map(jungmannlimpo, removeNumbers)
+
+#Transformando em DF
+jungmanndf <- data.frame(text=unlist(sapply(jungmannlimpo, "content")), stringsAsFactors=F)
+
+#Renomeando coluna
+names(jungmanndf) <- c("texto")
+
+#Coluna: ministro
+jungmanndf$ministro <- c('Raul Jungmann')
+
+#Coluna: pagina
+jungmanndf$pagina <- c(1:41)
+
+#Coluna: data
+jungmanndf <- jungmanndf %>%
+  rownames_to_column(var="data")
+
+#Padronizando a coluna data
+jungmanndf$data <- str_sub(jungmanndf$data, start=0, end=10)
+
+#Convertendo
+jungmanndf$data <- as.Date(jungmanndf$data, "%d-%m-%Y")
+
 ################################ TODOS ######################
 
-corpusdf <- bind_rows(azevedodf, amorimdf, lunadf)
+corpusdf <- bind_rows(azevedodf, amorimdf, lunadf, wagnerdf, jungmanndf)
 
 ######################################################################################
-############################## ANÁLISE DE FREQUÊNCIA  ############
+############################## ANÁLISE EXPLORATÓRIA: FREQUÊNCIA DE TERMOS  ###########
 ######################################################################################
 
 #Tokenizando
@@ -196,7 +270,7 @@ azevedo_freq %>%
 pal2 <- brewer.pal(9,"BrBG")
 wordcloud(amorimlimpo, min.freq=2,max.words=200, random.order=F, colors=pal2)
 
-#Frequência de unigrams
+#Frequência
 amorim_freq <- tokens %>%
   filter(ministro %in% c("Celso Amorim")) %>%
   count(tokens)
@@ -225,7 +299,7 @@ amorim_freq %>%
 pal2 <- brewer.pal(9,"BrBG")
 wordcloud(lunalimpo, min.freq=2,max.words=200, random.order=F, colors=pal2)
 
-#Frequência de unigrams
+#Frequência
 luna_freq <- tokens %>%
   filter(ministro %in% c("Joaquim Silva e Luna")) %>%
   count(tokens)
@@ -246,6 +320,63 @@ luna_freq %>%
        caption="Fonte: Observatório do Ministério da Defesa",
        y = "",
        x = "Frequência")
+
+################################ WAGNER ######################
+
+#Wordcloud
+pal2 <- brewer.pal(9,"BrBG")
+wordcloud(wagnerlimpo, min.freq=2,max.words=200, random.order=F, colors=pal2)
+
+#Frequência
+wagner_freq <- tokens %>%
+  filter(ministro %in% c("Jacques Wagner")) %>%
+  count(tokens)
+
+wagner_freq %>%
+  top_n(20, n) %>%
+  mutate(tokens = reorder(tokens, n)) %>%
+  ggplot(aes(tokens, n)) +
+  geom_col(aes(reorder(tokens, n), n), width = 0.6, show.legend = FALSE, fill = "green1") +
+  geom_point(col="green3", size=6.5) + 
+  geom_text(aes(label=n), color="black", size=3, vjust = 0.3) +
+  ylab("Frequência") +
+  xlab(" ")+
+  coord_flip() +
+  theme_bw() +
+  labs(title= "Quais foram os assuntos mais abordados pelo Ministro \nJacques Wagner?",
+       subtitle = "Palavras mais proferidas pelo Ministro em discursos e artigos",
+       caption="Fonte: Observatório do Ministério da Defesa",
+       y = "",
+       x = "Frequência")
+
+################################ JUNGMANN ######################
+
+#Wordcloud
+pal2 <- brewer.pal(9,"BrBG")
+wordcloud(jungmannlimpo, min.freq=2,max.words=200, random.order=F, colors=pal2)
+
+#Frequência
+jungmann_freq <- tokens %>%
+  filter(ministro %in% c("Raul Jungmann")) %>%
+  count(tokens)
+
+jungmann_freq %>%
+  top_n(20, n) %>%
+  mutate(tokens = reorder(tokens, n)) %>%
+  ggplot(aes(tokens, n)) +
+  geom_col(aes(reorder(tokens, n), n), width = 0.6, show.legend = FALSE, fill = "green1") +
+  geom_point(col="green3", size=6.5) + 
+  geom_text(aes(label=n), color="black", size=3, vjust = 0.3) +
+  ylab("Frequência") +
+  xlab(" ")+
+  coord_flip() +
+  theme_bw() +
+  labs(title= "Quais foram os assuntos mais abordados pelo Ministro \nRaul Jungmann?",
+       subtitle = "Palavras mais proferidas pelo Ministro em discursos e artigos",
+       caption="Fonte: Observatório do Ministério da Defesa",
+       y = "",
+       x = "Frequência")
+
 
 ############################ FREQUÊNCIA DE DISCURSOS POR ANO ######################
 
@@ -287,13 +418,38 @@ tokens_freq %>%
        y = "",
        x = "Frequência")
 
+############################ PROPORÇÃO DE PALAVRAS POR MINISTRO ######################
+
+proporcao_tokens <- tokens %>% 
+  count(ministro, tokens) %>%
+  group_by(ministro) %>%
+  mutate(proporcao = n / sum(n)) %>% 
+  select(-n) %>% 
+  spread(ministro, proporcao) %>% 
+  gather(ministro, proporcao, `Celso Amorim`|`Joaquim Silva e Luna`|`Jacques Wagner`|`Raul Jungmann`)
+
+proporcao_tokens %>% 
+  ggplot(aes(x = proporcao, y = `Fernando Azevedo`, 
+             color = abs(`Fernando Azevedo` - proporcao))) +
+  geom_abline(color = "black", lty = 2) +
+  geom_jitter(alpha = 0.1, size = 2.5, width = 0.3, height = 0.3) +
+  geom_text(aes(label = tokens), check_overlap = TRUE, vjust = 1.5) +
+  scale_x_log10(labels = percent_format()) +
+  scale_y_log10(labels = percent_format()) +
+  scale_color_gradient(limits = c(0, 0.001), 
+                       low = "green1", high = "green4") +
+  facet_wrap(~ministro, ncol = 2) +
+  theme(legend.position="none") +
+  labs(y = "Fernando Azevedo", x = NULL)+
+  labs(title="O quanto são similares as palavras empregadas pelo atual \nMinistro e pelos Ministros anteriores?",
+       subtitle = "Palavras mais próximas à linha diagonal aparecem com frequências similares \nem ambos os conjuntos de discursos e artigos",
+       caption="Fonte: Observatório do Ministério da Defesa",
+       y = "Fernando Azevedo",
+       x = "")
 
 #######################################################################################
-################### ANÁLISE DE CORRELAÇÃO ENTRE MINISTROS  ############################
+##############################ANÁLISE DE CLUSTERS  ####################################
 #######################################################################################
-
-
-############ AGRUPAMENTO HIERÁRQUICO ##################
 
 #Transformando tabela de frequência em matriz Ministro x Termos
 matrix <- tokens_freq %>% 
@@ -314,34 +470,4 @@ clusters %>%
        subtitle = "Similaridade estimada pela técnica de Clusterização Aglomerativa, \na partir da distância euclideana entre as frequências de emprego de \npalavras por cada Ministro",
        caption="Fonte: Observatório do Ministério da Defesa",
        y = "Similaridade (Distância Euclideana)",
-       x = "")
-
-########### CORRELAÇÃO NO EMPREGO DE TERMOS ###########
-
-proporcao_tokens <- tokens %>% 
-  mutate(tokens = str_extract(tokens, "[a-z']+")) %>%
-  count(ministro, tokens) %>%
-  group_by(ministro) %>%
-  mutate(proporcao = n / sum(n)) %>% 
-  select(-n) %>% 
-  spread(ministro, proporcao) %>% 
-  gather(ministro, proporcao, `Celso Amorim`|`Joaquim Silva e Luna`)
-
-proporcao_tokens %>% 
-  ggplot(aes(x = proporcao, y = `Fernando Azevedo`, 
-             color = abs(`Fernando Azevedo` - proporcao))) +
-  geom_abline(color = "black", lty = 2) +
-  geom_jitter(alpha = 0.1, size = 2.5, width = 0.3, height = 0.3) +
-  geom_text(aes(label = tokens), check_overlap = TRUE, vjust = 1.5) +
-  scale_x_log10(labels = percent_format()) +
-  scale_y_log10(labels = percent_format()) +
-  scale_color_gradient(limits = c(0, 0.001), 
-                       low = "green1", high = "green4") +
-  facet_wrap(~ministro, ncol = 3) +
-  theme(legend.position="none") +
-  labs(y = "Fernando Azevedo", x = NULL)+
-  labs(title="O quanto são similares as palavras empregadas pelo atual \nMinistro e pelos Ministros anteriores?",
-       subtitle = "Palavras mais próximas à linha diagonal aparecem com frequências similares \nem ambos os conjuntos de discursos e artigos",
-       caption="Fonte: Observatório do Ministério da Defesa",
-       y = "Fernando Azevedo",
-       x = "")
+       x = " ")
