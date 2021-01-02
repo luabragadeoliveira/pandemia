@@ -160,47 +160,6 @@ tokens_freq <- tokens %>%
   group_by(ministro) %>%
   count(tokens)
 
-############################ FREQUÊNCIA DE DISCURSOS POR ANO ######################
-
-#Tabela de frequência de discursos por ano
-discursos_freq <- corpusdf %>%
-  group_by(ministro) %>%
-  count(data)
-
-discursos_freq %>%
-  ggplot(aes(data, n)) +
-  geom_line() +
-  ylab("Frequência") +
-  xlab(" ")+
-  facet_grid(ministro ~.)+
-  labs(title= "Quais Ministros da Defesa produziram mais discursos e artigos?",
-       subtitle = "Comparação do volume de discursos e artigos produzidos por ano pelos Ministros",
-       caption="Fonte: Observatório do Ministério da Defesa",
-       y = "Quantidade")
-
-
-############################ FREQUÊNCIAS DE PALAVRAS-CHAVE ######################
-
-tokens_freq %>%
-  filter(tokens %in% c("argentina", "bolívia", "chile", "colômbia",
-                       "equador", "guiana", "paraguai", "peru", "suriname", 
-                       "uruguai", "venezuela")) %>%
-  mutate(tokens = reorder(tokens, n)) %>%
-  ggplot(aes(tokens, n)) +
-  geom_col(aes(reorder(tokens, n), n), width = 0.1, show.legend = FALSE, fill = "green3") +
-  geom_point(col="green3", size=6.5) +
-  geom_text(aes(label=n), color="black", size=3, vjust = 0.3) +
-  ylab("Frequência") +
-  xlab(" ")+
-  coord_flip() +
-  facet_wrap(~ ministro)+
-  labs(title="A América do Sul nos discursos dos Ministros da Defesa",
-       subtitle = "Ênfase estimada pela frequência de citações dos países sul-americanos \npelos Ministros em discursos e artigos",
-       caption="Fonte: Observatório do Ministério da Defesa",
-       y = "",
-       x = "Frequência")
-
-
 ################################ AZEVEDO ######################
 
 #Wordcloud
@@ -285,6 +244,47 @@ luna_freq %>%
        caption="Fonte: Observatório do Ministério da Defesa",
        y = "",
        x = "Frequência")
+
+############################ FREQUÊNCIA DE DISCURSOS POR ANO ######################
+
+#Tabela de frequência de discursos por ano
+discursos_freq <- corpusdf %>%
+  group_by(ministro) %>%
+  count(data)
+
+discursos_freq %>%
+  ggplot(aes(data, n)) +
+  geom_line() +
+  ylab("Frequência") +
+  xlab(" ")+
+  facet_grid(ministro ~.)+
+  labs(title= "Quais Ministros da Defesa produziram mais discursos e artigos?",
+       subtitle = "Comparação do volume de discursos e artigos produzidos por ano pelos Ministros",
+       caption="Fonte: Observatório do Ministério da Defesa",
+       y = "Quantidade")
+
+
+############################ FREQUÊNCIAS DE PALAVRAS-CHAVE ######################
+
+tokens_freq %>%
+  filter(tokens %in% c("argentina", "bolívia", "chile", "colômbia",
+                       "equador", "guiana", "paraguai", "peru", "suriname", 
+                       "uruguai", "venezuela")) %>%
+  mutate(tokens = reorder(tokens, n)) %>%
+  ggplot(aes(tokens, n)) +
+  geom_col(aes(reorder(tokens, n), n), width = 0.1, show.legend = FALSE, fill = "green3") +
+  geom_point(col="green3", size=6.5) +
+  geom_text(aes(label=n), color="black", size=3, vjust = 0.3) +
+  ylab("Frequência") +
+  xlab(" ")+
+  coord_flip() +
+  facet_wrap(~ ministro)+
+  labs(title="A América do Sul nos discursos dos Ministros da Defesa",
+       subtitle = "Ênfase estimada pela frequência de citações dos países sul-americanos \npelos Ministros em discursos e artigos",
+       caption="Fonte: Observatório do Ministério da Defesa",
+       y = "",
+       x = "Frequência")
+
 
 #######################################################################################
 ################### ANÁLISE DE CORRELAÇÃO ENTRE MINISTROS  ############################
