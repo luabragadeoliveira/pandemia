@@ -81,8 +81,27 @@ fab <- fab %>%
          valor = as.numeric(as.character(sub(",", ".", valor, fixed = TRUE))),
          forca = as.factor(c("Força Aérea Brasileira")))
 
+################# FAB #####################
+
+hfa <- read.csv("hfa.csv", header = TRUE, sep = ";", dec = ",")
+head(hfa)
+glimpse(hfa)
+
+#Seleciona somente colunas desejadas
+#Renomeia coluna objeto para material
+#Padronizando maiúsculas e minúsculas
+#Remover cifrões e pontos
+#Converte valores para numeric
+#Insere coluna Força
+hfa <- hfa %>% 
+  select(contratado, valor) %>% 
+  mutate(contratado = as.factor(str_to_title(contratado)),
+         valor = gsub('[R$.]', '', valor),
+         valor = as.numeric(as.character(sub(",", ".", valor, fixed = TRUE))),
+         forca = as.factor(c("Hospital das Forças Armadas")))
+
 ################# UNINDO BANCOS #####################
-geral <- bind_rows(eb, mb, fab)
+geral <- bind_rows(eb, mb, fab, hfa)
 
 glimpse(geral)
 
@@ -111,6 +130,18 @@ geom_boxplot(varwidth=T, fill="plum") +
        x=" ",
        y=" ")
 
+#Retirando as compras muito grandes que distorcem os dados
+geral %>% 
+  filter(valor < 10000) %>% 
+  ggplot(aes(forca, valor, fill=forca)) +
+  geom_boxplot(varwidth=T, show.legend = FALSE) + 
+  scale_y_continuous(labels = label_dollar(prefix = "R$")) +
+  labs(title=" ", 
+       subtitle=" ",
+       caption=" ",
+       x=" ",
+       y=" ")
+
 #### GASTOS POR FORÇA
 
 #Tabela de Frequência
@@ -127,6 +158,7 @@ forca_freq %>%
   scale_y_continuous(labels = label_dollar(prefix = "R$")) +
   geom_text(aes(label=total), color="black", size=3, vjust = -0.5) +
   theme(legend.position = "none") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(title=" ", 
        subtitle=" ", 
        caption=" ",
@@ -154,8 +186,7 @@ contratado_freq %>%
   ggplot(aes(total, fct_reorder(contratado, total), fill = forca)) +
   scale_x_continuous(labels = label_dollar(prefix = "R$")) +
   geom_col(show.legend = FALSE) +
-  facet_wrap(~forca, ncol = 3, scales = "free") +
-  coord_flip () +
+  facet_wrap(~forca, ncol = 1, scales = "free") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(title= " ",
        subtitle = " ",
@@ -177,7 +208,7 @@ treemap(contratado_freq_top, #Your data frame object
         palette = "Set1",  #Select your color palette from the RColorBrewer presets or make your own.
         title=" ", #Customize your title
         fontsize.title = 14, #Change the font size of the title
-        fontsize.labels	= 12,
+        fontsize.labels	= 10,
         position.legend = "bottom",
         aspRatio = NA,
         title.legend = "",
@@ -195,6 +226,7 @@ ug_freq <- geral %>%
 #Barplot
 ug_freq %>%
   group_by(forca) %>%
+  filter(forca %in% c("Marinha do Brasil", "Força Aérea Brasileira", "Exército Brasileiro")) %>% 
   slice_max(total, n = 10) %>%
   ungroup() %>%
   ggplot(aes(total, fct_reorder(ug, total), fill = forca)) +
@@ -223,7 +255,7 @@ treemap(ug_freq_top, #Your data frame object
         palette = "Set1",  #Select your color palette from the RColorBrewer presets or make your own.
         title=" ", #Customize your title
         fontsize.title = 14, #Change the font size of the title
-        fontsize.labels	= 10,
+        fontsize.labels	= 8,
         position.legend = "bottom",
         aspRatio = NA,
         title.legend = "",
@@ -247,21 +279,6 @@ ug_regional <- left_join(regional, ug_freq)
 
 #### SÉRIE TEMPORAL DE GASTOS DA MARINHA
 
-marinha_freq <- geral %>%
-  format(data_empenho, "%m")
-
-
-geral %>% 
-  filter(forca %in% "Marinha do Brasil") %>% 
-  ggplot(aes(data_empenho, valor)) + 
-  geom_line() + 
-  geom_smooth() +
-  scale_y_continuous(labels = label_dollar(prefix = "R$")) +
-  labs(title= " ",
-       subtitle = " ",
-       caption=" ",
-       y = "",
-       x = " ")
 
 
 #### PRINCIPAIS MATERIAIS FAB
@@ -274,11 +291,12 @@ materiais_fab_freq <- geral %>%
   arrange(desc(total))
 
 #Simplifica nomes removendo a frase "Serviço De Engenharia Para"
-
+materiais_fab_freq$material <- materiais_fab_freq$material %>% 
+  str_replace_all("Serviço De Engenharia Para", "")
 
 #Barplot
 materiais_fab_freq %>%
-  slice_max(total, n = 15) %>%
+  slice_max(total, n = 10) %>%
   ggplot(aes(total, fct_reorder(material, total), fill = material)) +
   scale_x_continuous(labels = label_dollar(prefix = "R$")) +
   geom_col(show.legend = FALSE) +
