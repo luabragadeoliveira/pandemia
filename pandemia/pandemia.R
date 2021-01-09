@@ -1,98 +1,91 @@
 #Carrega pacotes
-library(dplyr)
-library(tidyr)
-library(stringr)
-library(ggplot2)
-library(plotly)
+library(tidyverse)
 library(scales)
-library(forcats)
+library(lubridate)
 library(treemap)
-theme_set(theme_bw())
+library(rgdal)
 
+theme_set(theme_bw())
 options(scipen = 999)
 
 #Fixa diretório
-setwd("C:\\Users\\Luã Braga\\Desktop\\omd\\pandemia")
+setwd("C:\\Users\\Luã Braga\\Desktop\\projetos\\pandemia")
 
 #######################################
 # Importação e manipulação dos dados
 ######################################
 
-#Importas bancos
+################# EB #####################
+
 eb <- read.csv("eb.csv", header = TRUE, sep = ";", dec = ",")
 head(eb)
 glimpse(eb)
+
+#Seleciona somente colunas desejadas
+#Padronizando maiúsculas e minúsculas
+#Remover cifrões e pontos
+#Converte valores para numeric
+#Insere coluna Força
+eb <- eb %>% 
+  select(ug, contratado, valor) %>% 
+  mutate(ug = as.factor(str_to_title(ug)),
+         contratado = as.factor(str_to_title(contratado)),
+         valor = gsub('[R$.]', '', valor),
+         valor = as.numeric(as.character(sub(",", ".", valor, fixed = TRUE))),
+         forca = as.factor(c("Exército Brasileiro"))) 
+
+################# MB #####################
 
 mb <- read.csv("mb.csv", header = TRUE, sep = ";", dec = ",")
 head(mb)
 glimpse(mb)
 
-fab <- read.csv("fab.csv", header = TRUE, sep = ";", dec = ",")
-head(fab)
-glimpse(fab)
-
-
-################# EB #####################
-
-#Remove colunas vazias
-eb[ ,9] <- NULL
-
+#Seleciona somente colunas desejadas
+#Renomeia coluna "obs" para "material"
 #Padronizando maiúsculas e minúsculas
-eb$ug <- str_to_title(eb$ug)
-eb$contratado <- str_to_title(eb$contratado)
-
 #Remover cifrões e pontos
-eb$valor <- gsub('[R$.]', '', eb$valor)
-
-#Converte valores para numeric (reconhece )
-eb$valor <- as.numeric(sub(",", ".", eb$valor, fixed = TRUE))
-
+#Converte valores para numeric
 #Insere coluna Força
-eb$forca <- c("Exército Brasileiro")
-
-################# MB #####################
-
-#Remove colunas vazias
-mb[ ,12:13] <- NULL
-
-#Padronizando maiúsculas e minúsculas
-mb$ug <- str_to_title(mb$ug)
-mb$contratado <- str_to_title(mb$contratado)
-
-#Remover cifrões e pontos
-mb$valor <- gsub('[R$.]', '', mb$valor)
-
-#Converte valores para numeric (reconhece )
-mb$valor <- as.numeric(sub(",", ".", mb$valor, fixed = TRUE))
-
-#Insere coluna Força
-mb$forca <- c("Marinha do Brasil")
-
-#Converte datas para date
-mb$data <-  as.Date(mb$data, "%m/%d/%Y")
+#Trnasforma coluna de data em date
+mb <- mb %>% 
+  select(ug, contratado, valor, data_empenho, obs) %>% 
+  rename(material = obs) %>% 
+  mutate(ug = as.factor(str_to_title(ug)),
+         contratado = as.factor(str_to_title(contratado)),
+         material = as.factor(str_to_title(material)),
+         valor = gsub('[R$.]', '', valor),
+         valor = as.numeric(as.character(sub(",", ".", valor, fixed = TRUE))),
+         forca = as.factor(c("Marinha do Brasil")),
+         data_empenho = as.Date(data_empenho, "%d/%m/%Y")) 
 
 
 ################# FAB #####################
 
-#Remove colunas vazias
-fab[ ,13:26] <- NULL
+fab <- read.csv("fab.csv", header = TRUE, sep = ";", dec = ",")
+head(fab)
+glimpse(fab)
 
+#Seleciona somente colunas desejadas
+#Renomeia coluna objeto para material
 #Padronizando maiúsculas e minúsculas
-fab$ug <- str_to_title(fab$ug)
-fab$contratado <- str_to_title(fab$contratado)
-
 #Remover cifrões e pontos
-fab$valor <- gsub('[R$.]', '', fab$valor)
-
-#Converte valores para numeric (reconhece )
-fab$valor <- as.numeric(sub(",", ".", fab$valor, fixed = TRUE))
-
+#Converte valores para numeric
 #Insere coluna Força
-fab$forca <- c("Força Aérea Brasileira")
+fab <- fab %>% 
+  select(ug, contratado, valor, objeto) %>% 
+  rename(material = objeto) %>% 
+  mutate(ug = as.factor(str_to_title(ug)),
+         contratado = as.factor(str_to_title(contratado)),
+         material = as.factor(str_to_title(material)),
+         valor = gsub('[R$.]', '', valor),
+         valor = as.numeric(as.character(sub(",", ".", valor, fixed = TRUE))),
+         forca = as.factor(c("Força Aérea Brasileira")))
 
 ################# UNINDO BANCOS #####################
 geral <- bind_rows(eb, mb, fab)
-geral$valor <- as.numeric(geral$valor)
+
+glimpse(geral)
+
 
 ################################
 # Análises exploratórias
@@ -107,95 +100,194 @@ sd(geral$valor)
 #Histograma do valor das compras
 hist(geral$valor)
 
-#Distribuição do valor das compras
+#Distribuição do valor das compras (Boxplot)
 geral %>% 
 ggplot(aes(forca, valor, fill=forca)) +
 geom_boxplot(varwidth=T, fill="plum") + 
   scale_y_continuous(labels = label_dollar(prefix = "R$")) +
-  labs(title="Distribuição dos valores empenhados para \ncompras emergenciais por Força Armada", 
-       subtitle="Os dados apresentam grande variância e indicam que poucas aquisições \nforam responsáveis pela maior parte dos gastos",
-       caption="Fonte: Observatório do Ministério da Defesa",
+  labs(title=" ", 
+       subtitle=" ",
+       caption=" ",
        x=" ",
        y=" ")
 
-#Distribuição nominal de gastos por força armada (NÃO ESTÁ SUMARIZANDO FAB E EB)
+#### GASTOS POR FORÇA
+
+#Tabela de Frequência
 forca_freq <- geral %>%
   group_by(forca) %>%
-  summarise (total = sum(valor)) %>%
+  summarise (total = sum(valor, na.rm = TRUE)) %>%
   arrange(desc(total))
 
+#Barplot
 forca_freq %>% 
   mutate(forca = fct_reorder(forca, total, .desc = TRUE)) %>%
   ggplot(aes(forca, total, fill=forca)) +
-  geom_bar(stat="identity", width = 0.5) + 
+  geom_col(width = 0.5) + 
   scale_y_continuous(labels = label_dollar(prefix = "R$")) +
   geom_text(aes(label=total), color="black", size=3, vjust = -0.5) +
   theme(legend.position = "none") +
-  labs(title="Total dos valores empenhados para compras emergenciais \npor Força Armada", 
-       subtitle="O Exército Brasileiro realizou mais despesas no combate à Covid-19", 
-       caption="Fonte: Observatório do Ministério da Defesa",
+  labs(title=" ", 
+       subtitle=" ", 
+       caption=" ",
        x = " ",
        y = " ")
 
-#Distribuição percentual de gastos por força armada
+#### GASTOS POR CONTRATADO POR FORÇA
 
-
-
-
-
-
-
-#Valor dos gastos por ug
-ug_freq <- geral %>%
-  group_by(forca, ug) %>%
-  summarise (total = sum(valor)) %>%
-  arrange(desc(total))
-
-#Treemap com as 15 primeiras ugs
-ug_freq_15 <- ug_freq %>% 
-  filter(total > 4156222.59)
-
-treemap(ug_freq_15, #Your data frame object
-        index=c("ug"),  #A list of your categorical variables
-        vSize = "total",  #This is your quantitative variable
-        vColor = "forca", #This is a categorical variable
-        type="categorical", #Type sets the organization and color scheme of your treemap
-        palette = "Set1",  #Select your color palette from the RColorBrewer presets or make your own.
-        title="As 15 organizações militares que mais empenharam recursos \npara combate à Covid-19", #Customize your title
-        fontsize.title = 14, #Change the font size of the title
-        position.legend = "bottom",
-        aspRatio = NA,
-        title.legend = "",
-)
-
-
-#Valor dos gastos por contratado
+#Tabela de Frequência
 contratado_freq <- geral %>%
-  group_by(forca, contratado) %>%
-  summarise (total = sum(valor)) %>%
+  group_by(contratado, forca) %>%
+  summarise (total = sum(valor, na.rm = FALSE)) %>%
   arrange(desc(total))
 
-#Treemap com as 15 primeiras contratados
+#Simplifica nomes removendo strings terminados em Ltda, S/A, SA, Eireli, etc e pontos e traços
+contratado_freq$contratado <- contratado_freq$contratado %>% 
+  str_replace_all("Sa$|S.a$|S.a.$|S/A$|Ltda$|Ltda.$|Eireli$", " ") %>% 
+  str_replace_all(fixed(".|-"), "")
 
-contratado_freq_15 <- contratado_freq %>% 
-  filter(total > 4156222.59)
+#Barplot
+contratado_freq %>%
+  group_by(forca) %>%
+  slice_max(total, n = 10) %>%
+  ungroup() %>%
+  ggplot(aes(total, fct_reorder(contratado, total), fill = forca)) +
+  scale_x_continuous(labels = label_dollar(prefix = "R$")) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~forca, ncol = 3, scales = "free") +
+  coord_flip () +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title= " ",
+       subtitle = " ",
+       caption=" ",
+       y = "",
+       x = " ")
 
-treemap(contratado_freq_15, #Your data frame object
+#Treemap
+contratado_freq_top <- contratado_freq %>%
+  group_by(forca) %>%
+  slice_max(total, n = 10) %>%
+  ungroup()
+
+treemap(contratado_freq_top, #Your data frame object
         index=c("contratado"),  #A list of your categorical variables
         vSize = "total",  #This is your quantitative variable
         vColor = "forca", #This is a categorical variable
         type="categorical", #Type sets the organization and color scheme of your treemap
         palette = "Set1",  #Select your color palette from the RColorBrewer presets or make your own.
-        title="Os 15 maiores fornecedores das Forças Armadas \nem compras emergenciais para combate à Covid-19", #Customize your title
+        title=" ", #Customize your title
         fontsize.title = 14, #Change the font size of the title
+        fontsize.labels	= 12,
         position.legend = "bottom",
         aspRatio = NA,
         title.legend = "",
 )
 
-#Top 15 contratados por força
+
+#### GASTOS POR UG POR FORÇA
+
+#Tabela de Frequência
+ug_freq <- geral %>%
+  group_by(ug, forca) %>%
+  summarise (total = sum(valor, na.rm = TRUE)) %>%
+  arrange(desc(total))
+
+#Barplot
+ug_freq %>%
+  group_by(forca) %>%
+  slice_max(total, n = 10) %>%
+  ungroup() %>%
+  ggplot(aes(total, fct_reorder(ug, total), fill = forca)) +
+  scale_x_continuous(labels = label_dollar(prefix = "R$")) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~forca, ncol = 3, scales = "free") +
+  coord_flip () +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title= " ",
+       subtitle = " ",
+       caption=" ",
+       y = "",
+       x = " ")
+
+#Treemap
+ug_freq_top <- ug_freq %>%
+  group_by(forca) %>%
+  slice_max(total, n = 10) %>%
+  ungroup()
+
+treemap(ug_freq_top, #Your data frame object
+        index=c("ug"),  #A list of your categorical variables
+        vSize = "total",  #This is your quantitative variable
+        vColor = "forca", #This is a categorical variable
+        type="categorical", #Type sets the organization and color scheme of your treemap
+        palette = "Set1",  #Select your color palette from the RColorBrewer presets or make your own.
+        title=" ", #Customize your title
+        fontsize.title = 14, #Change the font size of the title
+        fontsize.labels	= 10,
+        position.legend = "bottom",
+        aspRatio = NA,
+        title.legend = "",
+)
 
 
+### MAPA DE GASTOS POR ESTADO
+
+#Exportando tabela de frequência de UG, para serem inseridas as localidades pela equipe
+write.csv(ug_freq,"C:\\Users\\Luã Braga\\Desktop\\projetos\\pandemia\\ug_freq.csv", row.names = FALSE)
+
+#Importando shapefile
+shp <- readOGR("C:\\Users\\Luã Braga\\Desktop\\projetos\\pandemia\\mapa", "BR_Municipios_2019", stringsAsFactors=FALSE, encoding="UTF-8")
+
+#Importando DF com localidades
+regional <- read.csv("C:\\Users\\Luã Braga\\Desktop\\projetos\\pandemia\\regional.csv", header=T,sep=";")
+
+#Juntando à tabela de frequência de ugs
+ug_regional <- left_join(regional, ug_freq)
 
 
+#### SÉRIE TEMPORAL DE GASTOS DA MARINHA
+
+marinha_freq <- geral %>%
+  format(data_empenho, "%m")
+
+
+geral %>% 
+  filter(forca %in% "Marinha do Brasil") %>% 
+  ggplot(aes(data_empenho, valor)) + 
+  geom_line() + 
+  geom_smooth() +
+  scale_y_continuous(labels = label_dollar(prefix = "R$")) +
+  labs(title= " ",
+       subtitle = " ",
+       caption=" ",
+       y = "",
+       x = " ")
+
+
+#### PRINCIPAIS MATERIAIS FAB
+
+#Tabela de frequência
+materiais_fab_freq <- geral %>%
+  filter(forca %in% "Força Aérea Brasileira") %>% 
+  group_by(material) %>%
+  summarise (total = sum(valor, na.rm = FALSE)) %>%
+  arrange(desc(total))
+
+#Simplifica nomes removendo a frase "Serviço De Engenharia Para"
+
+
+#Barplot
+materiais_fab_freq %>%
+  slice_max(total, n = 15) %>%
+  ggplot(aes(total, fct_reorder(material, total), fill = material)) +
+  scale_x_continuous(labels = label_dollar(prefix = "R$")) +
+  geom_col(show.legend = FALSE) +
+  labs(title= " ",
+       subtitle = " ",
+       caption=" ",
+       y = "",
+       x = " ")
+
+
+#### PRINCIPAIS MATERIAIS MARINHA
 
