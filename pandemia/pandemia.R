@@ -1,9 +1,10 @@
 #Carrega pacotes
 library(tidyverse)
 library(scales)
-library(lubridate)
 library(treemap)
-library(rgdal)
+library(tm)
+library(tidytext)
+library(lubridate)
 
 theme_set(theme_bw())
 options(scipen = 999)
@@ -56,7 +57,7 @@ mb <- mb %>%
          valor = gsub('[R$.]', '', valor),
          valor = as.numeric(as.character(sub(",", ".", valor, fixed = TRUE))),
          forca = as.factor(c("Marinha do Brasil")),
-         data_empenho = as.Date(data_empenho, "%d/%m/%Y")) 
+         data_empenho = dmy(data_empenho))
 
 
 ################# FAB #####################
@@ -124,9 +125,11 @@ geral %>%
 ggplot(aes(forca, valor, fill=forca)) +
 geom_boxplot(varwidth=T, fill="plum") + 
   scale_y_continuous(labels = label_dollar(prefix = "R$")) +
-  labs(title=" ", 
-       subtitle=" ",
-       caption=" ",
+  scale_fill_manual(values=c("#008000", "#808080", "#000080", "#FF0000")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title="Variação das despesas emergenciais por Força Armada", 
+       subtitle="Poucas aquisições concentraram o maior volume de gastos no período",
+       caption="Fonte: Observatório do Ministério da Defesa",
        x=" ",
        y=" ")
 
@@ -136,8 +139,10 @@ geral %>%
   ggplot(aes(forca, valor, fill=forca)) +
   geom_boxplot(varwidth=T, show.legend = FALSE) + 
   scale_y_continuous(labels = label_dollar(prefix = "R$")) +
-  labs(title=" ", 
-       subtitle=" ",
+  scale_fill_manual(values=c("#008000", "#808080", "#000080", "#FF0000")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title="Variação das despesas emergenciais por Força Armada", 
+       subtitle="Somente aquisições menores que R$ 10 mil reais",
        caption=" ",
        x=" ",
        y=" ")
@@ -156,11 +161,12 @@ forca_freq %>%
   ggplot(aes(forca, total, fill=forca)) +
   geom_col(width = 0.5) + 
   scale_y_continuous(labels = label_dollar(prefix = "R$")) +
+  scale_fill_manual(values=c("#008000", "#808080", "#000080", "#FF0000")) +
   geom_text(aes(label=total), color="black", size=3, vjust = -0.5) +
   theme(legend.position = "none") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(title=" ", 
-       subtitle=" ", 
+  labs(title="Total de despesas emergenciais por Força Armada", 
+       subtitle="O Exército Brasileiro realizou mais gastos, tendo somado um total de R$ 167.411.356", 
        caption=" ",
        x = " ",
        y = " ")
@@ -175,7 +181,7 @@ contratado_freq <- geral %>%
 
 #Simplifica nomes removendo strings terminados em Ltda, S/A, SA, Eireli, etc e pontos e traços
 contratado_freq$contratado <- contratado_freq$contratado %>% 
-  str_replace_all("Sa$|S.a$|S.a.$|S/A$|Ltda$|Ltda.$|Eireli$", " ") %>% 
+  str_replace_all("Sa$|S.a$|S.a.$|S/A$|Ltda$|Ltda|Lt|Eireli$", "") %>% 
   str_replace_all(fixed(".|-"), "")
 
 #Barplot
@@ -185,11 +191,12 @@ contratado_freq %>%
   ungroup() %>%
   ggplot(aes(total, fct_reorder(contratado, total), fill = forca)) +
   scale_x_continuous(labels = label_dollar(prefix = "R$")) +
+  scale_fill_manual(values=c("#008000", "#808080", "#000080", "#FF0000")) +
   geom_col(show.legend = FALSE) +
   facet_wrap(~forca, ncol = 1, scales = "free") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(title= " ",
-       subtitle = " ",
+  labs(title= "Total de despesas emergenciais por entidade contratada",
+       subtitle = "Poucas empresas concentraram a maior parte das contratações",
        caption=" ",
        y = "",
        x = " ")
@@ -206,14 +213,13 @@ treemap(contratado_freq_top, #Your data frame object
         vColor = "forca", #This is a categorical variable
         type="categorical", #Type sets the organization and color scheme of your treemap
         palette = "Set1",  #Select your color palette from the RColorBrewer presets or make your own.
-        title=" ", #Customize your title
+        title="Empresas que representaram o maior volume de contratações", #Customize your title
         fontsize.title = 14, #Change the font size of the title
         fontsize.labels	= 10,
         position.legend = "bottom",
         aspRatio = NA,
-        title.legend = "",
+        title.legend = ""
 )
-
 
 #### GASTOS POR UG POR FORÇA
 
@@ -231,12 +237,12 @@ ug_freq %>%
   ungroup() %>%
   ggplot(aes(total, fct_reorder(ug, total), fill = forca)) +
   scale_x_continuous(labels = label_dollar(prefix = "R$")) +
+  scale_fill_manual(values=c("#008000", "#808080", "#000080")) +
   geom_col(show.legend = FALSE) +
-  facet_wrap(~forca, ncol = 3, scales = "free") +
-  coord_flip () +
+  facet_wrap(~forca, ncol = 1, scales = "free") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(title= " ",
-       subtitle = " ",
+  labs(title= "Organizações militares que mais realizaram despesas emergenciais",
+       subtitle = "Poucas organizações concentraram a maior parte das contratações",
        caption=" ",
        y = "",
        x = " ")
@@ -253,7 +259,7 @@ treemap(ug_freq_top, #Your data frame object
         vColor = "forca", #This is a categorical variable
         type="categorical", #Type sets the organization and color scheme of your treemap
         palette = "Set1",  #Select your color palette from the RColorBrewer presets or make your own.
-        title=" ", #Customize your title
+        title="Organizações militares que mais realizaram despesas emergenciais", #Customize your title
         fontsize.title = 14, #Change the font size of the title
         fontsize.labels	= 8,
         position.legend = "bottom",
@@ -276,11 +282,6 @@ regional <- read.csv("C:\\Users\\Luã Braga\\Desktop\\projetos\\pandemia\\region
 #Juntando à tabela de frequência de ugs
 ug_regional <- left_join(regional, ug_freq)
 
-
-#### SÉRIE TEMPORAL DE GASTOS DA MARINHA
-
-
-
 #### PRINCIPAIS MATERIAIS FAB
 
 #Tabela de frequência
@@ -290,22 +291,20 @@ materiais_fab_freq <- geral %>%
   summarise (total = sum(valor, na.rm = FALSE)) %>%
   arrange(desc(total))
 
-#Simplifica nomes removendo a frase "Serviço De Engenharia Para"
+#Simplifica nomes removendo a frase "Serviço De Engenharia Para" e remove espaços a mais
 materiais_fab_freq$material <- materiais_fab_freq$material %>% 
-  str_replace_all("Serviço De Engenharia Para", "")
-
+  str_replace_all("Serviço De Engenharia Para", "") %>%
+  str_trim()
+  
 #Barplot
 materiais_fab_freq %>%
   slice_max(total, n = 10) %>%
-  ggplot(aes(total, fct_reorder(material, total), fill = material)) +
+  ggplot(aes(total, fct_reorder(material, total))) +
   scale_x_continuous(labels = label_dollar(prefix = "R$")) +
-  geom_col(show.legend = FALSE) +
-  labs(title= " ",
-       subtitle = " ",
+  geom_col(show.legend = FALSE, fill = "#000080") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title= "Produtos e serviços que representaram a maior parte das \ndespesas emergenciais da FAB",
+       subtitle = "Serviços de manutenção de aeronaves e aquisição de combustível \npara aeronaves concentraram a maior parte das despesas",
        caption=" ",
        y = "",
        x = " ")
-
-
-#### PRINCIPAIS MATERIAIS MARINHA
-
