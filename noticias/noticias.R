@@ -2,11 +2,16 @@
 library(rvest)
 library(tidyverse)
 library(tidytext)
-library(tm)
-library(wordcloud)
+library(wordcloud2)
+library(highcharter)
 
-options(scipen = 999)
-theme_set(theme_bw()) 
+#Importando banco de dados transfomado (as etapas de raspagem e preparação dos dados para se obter este data frame estão descritas abaixo)
+setwd("C:\\Users\\Luã Braga\\Desktop\\projetos\\pandemia\\noticias")
+corpusdf <- read.csv("corpusdf.csv", header = TRUE, sep = ",")
+
+##########################################################################
+############################## CAPTURANDO E PREPARANDO DADOS #############
+##########################################################################
 
 #Criando função de limpeza do texto
 limpar <- function(corpus) {
@@ -19,10 +24,6 @@ limpar <- function(corpus) {
   return(corpuslimpo)
   
 }
-
-##########################################################################
-############################## CAPTURANDO E PREPARANDO DADOS #############
-##########################################################################
 
 ############################ EB ######################
 
@@ -108,7 +109,11 @@ fabdf <- tidy(fab_corpus) %>%
 
 
 ############################ UNINDO TODOS ######################
+
 corpusdf <- bind_rows(ebdf, mbdf, fabdf)
+
+#Salvando DF completo e transformado, para novas análises
+write.csv(corpusdf,"C:\\Users\\Luã Braga\\Desktop\\projetos\\pandemia\\noticias\\corpusdf.csv", row.names = FALSE)
 
 ######################################################################################
 ############################## ANÁLISE EXPLORATÓRIA ##################################
@@ -121,57 +126,116 @@ tokens <- corpusdf %>%
 #Tabela de frequência
 tokens_freq <- tokens %>%
   count(forca, tokens, sort=TRUE) %>%
-  bind_tf_idf(tokens, forca, n)
+  bind_tf_idf(tokens, forca, n) %>% 
+  arrange(-tf_idf)
 
-#Wordcloud EB
+#Removendo linhas específicas
+tokens_freq <- tokens_freq[-c(31, 26),]
+
+########
+## EB ##
+########
+
+#Wordcloud
 cloud_eb <- tokens_freq %>% 
-  filter(forca == "Exército Brasileiro")
+  filter(forca == "Exército Brasileiro") %>% 
+  select(tokens, tf_idf)
 
 set.seed(1234)
-wordcloud(words = cloud_eb$tokens, 
-          freq = cloud_eb$tf_idf, 
-          min.freq = 1,
-          max.words=500, 
-          random.order=FALSE, 
-          rot.per=0.35,
-          colors=brewer.pal(8, "Dark2"))
+wordcloud2(data=cloud_eb, size=1.6)
 
-#Wordcloud MB
-cloud_mb <- tokens_freq %>% 
-  filter(forca == "Marinha do Brasil")
-
-set.seed(1234)
-wordcloud(words = cloud_mb$tokens, 
-          freq = cloud_mb$tf_idf, 
-          min.freq = 1,
-          max.words=500, 
-          random.order=FALSE, 
-          rot.per=0.35,
-          colors=brewer.pal(8, "Dark2"))
-
-#Wordcloud FAB
-cloud_fab <- tokens_freq %>% 
-  filter(forca == "Força Aérea Brasileira")
-
-set.seed(1234)
-wordcloud(words = cloud_fab$tokens, 
-          freq = cloud_fab$tf_idf, 
-          min.freq = 1,
-          max.words=500, 
-          random.order=FALSE, 
-          rot.per=0.35,
-          colors=brewer.pal(8, "Dark2"))
-
-#Gráfico de frequência geral (TF_IDF)
+#Barplot
 tokens_freq %>%
+  filter(forca == "Exército Brasileiro") %>% 
+  select(forca, tokens, tf_idf) %>% 
   group_by(forca) %>%
   slice_max(tf_idf, n = 15) %>%
   ungroup() %>%
-  ggplot(aes(tf_idf, fct_reorder(tokens, tf_idf), fill = forca)) +
-  geom_col(show.legend = FALSE) +
-  facet_wrap(~forca, ncol = 2, scales = "free") +
-  labs(title= "",
-       subtitle = "Relevância estimada pelo TF-IDF das palavras no conjunto de notícias",
-       caption="Fonte: Observatório do Ministério da Defesa",
-       y = "",
-       x = "TF-IDF")
+  hchart('bar', 
+         hcaes(x = tokens, y = tf_idf),
+         name = "TF-IDF") %>% 
+  hc_title(text = "Termos mais relevantes nas notícias do Exército Brasileiro", 
+           style = list(fontWeight = "bold", fontSize = "14px"),
+           fontFamily = "Mermaid",
+           align = "center") %>% 
+  hc_subtitle(text = "Relevância estimada pela métrica TF-IDF", 
+              fontFamily = "Mermaid",
+              align = "center") %>% 
+  hc_credits(enabled = TRUE, 
+             text = "Fonte: Observatório de Ministério da Defesa",
+             style = list(fontSize = "10px"),
+             fontFamily = "Mermaid") %>% 
+  hc_xAxis(title = list(text = "")) %>%
+  hc_yAxis(title = list(text = "TF-IDF"))
+
+########
+## MB ##
+########
+
+#Wordcloud
+cloud_mb <- tokens_freq %>% 
+  filter(forca == "Marinha do Brasil") %>% 
+  select(tokens, tf_idf)
+
+set.seed(1234)
+wordcloud2(data=cloud_mb, size=1.6)
+
+#Barplot
+tokens_freq %>%
+  filter(forca == "Marinha do Brasil") %>% 
+  select(forca, tokens, tf_idf) %>% 
+  group_by(forca) %>%
+  slice_max(tf_idf, n = 15) %>%
+  ungroup() %>%
+  hchart('bar', 
+         hcaes(x = tokens, y = tf_idf),
+         name = "TF-IDF") %>% 
+  hc_title(text = "Termos mais relevantes nas notícias da Marinha do Brasil", 
+           style = list(fontWeight = "bold", fontSize = "14px"),
+           fontFamily = "Mermaid",
+           align = "center") %>% 
+  hc_subtitle(text = "Relevância estimada pela métrica TF-IDF", 
+              fontFamily = "Mermaid",
+              align = "center") %>% 
+  hc_credits(enabled = TRUE, 
+             text = "Fonte: Observatório de Ministério da Defesa",
+             style = list(fontSize = "10px"),
+             fontFamily = "Mermaid") %>% 
+  hc_xAxis(title = list(text = "")) %>%
+  hc_yAxis(title = list(text = "TF-IDF"))
+
+########
+## FAB ##
+########
+
+#Wordcloud
+cloud_fab <- tokens_freq %>% 
+  filter(forca == "Força Aérea Brasileira") %>% 
+  select(tokens, tf_idf)
+
+set.seed(1234)
+wordcloud2(data=cloud_fab, size=1.6)
+
+#Barplot
+tokens_freq %>%
+  filter(forca == "Força Aérea Brasileira") %>% 
+  select(forca, tokens, tf_idf) %>% 
+  group_by(forca) %>%
+  slice_max(tf_idf, n = 15) %>%
+  ungroup() %>%
+  hchart('bar', 
+         hcaes(x = tokens, y = tf_idf),
+         name = "TF-IDF") %>% 
+  hc_title(text = "Termos mais relevantes nas notícias da Força Aérea Brasileira", 
+           style = list(fontWeight = "bold", fontSize = "14px"),
+           fontFamily = "Mermaid",
+           align = "center") %>% 
+  hc_subtitle(text = "Relevância estimada pela métrica TF-IDF", 
+              fontFamily = "Mermaid",
+              align = "center") %>% 
+  hc_credits(enabled = TRUE, 
+             text = "Fonte: Observatório de Ministério da Defesa",
+             style = list(fontSize = "10px"),
+             fontFamily = "Mermaid") %>% 
+  hc_xAxis(title = list(text = "")) %>%
+  hc_yAxis(title = list(text = "TF-IDF"))
