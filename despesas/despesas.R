@@ -2,6 +2,7 @@
 library(tidyverse)
 library(lubridate)
 library(highcharter)
+library(xts)
 
 options(scipen = 999)
 
@@ -127,7 +128,7 @@ hcboxplot(x = geral$valor,
               fontFamily = "Mermaid",
               align = "center") %>% 
   hc_credits(enabled = TRUE, 
-             text = "Fonte: Observatório de Ministério da Defesa",
+             text = "Fonte: Observatório do Ministério da Defesa",
              style = list(fontSize = "10px"),
              fontFamily = "Mermaid") %>% 
   hc_xAxis(title = list(text = "")) %>%
@@ -152,7 +153,7 @@ forca_freq %>%
            fontFamily = "Mermaid",
            align = "center") %>% 
   hc_credits(enabled = TRUE, 
-             text = "Fonte: Observatório de Ministério da Defesa",
+             text = "Fonte: Observatório do Ministério da Defesa",
              style = list(fontSize = "10px"),
              fontFamily = "Mermaid") %>% 
   hc_xAxis(title = list(text = "")) %>%
@@ -189,7 +190,7 @@ contratado_freq %>%
               fontFamily = "Mermaid",
               align = "center") %>% 
   hc_credits(enabled = TRUE, 
-             text = "Fonte: Observatório de Ministério da Defesa",
+             text = "Fonte: Observatório do Ministério da Defesa",
              style = list(fontSize = "10px"),
              fontFamily = "Mermaid") %>% 
   hc_xAxis(title = list(text = "")) %>%
@@ -214,7 +215,7 @@ contratado_freq %>%
               fontFamily = "Mermaid",
               align = "center") %>% 
   hc_credits(enabled = TRUE, 
-             text = "Fonte: Observatório de Ministério da Defesa",
+             text = "Fonte: Observatório do Ministério da Defesa",
              style = list(fontSize = "10px"),
              fontFamily = "Mermaid") %>% 
   hc_xAxis(title = list(text = "")) %>%
@@ -238,7 +239,7 @@ contratado_freq %>%
               fontFamily = "Mermaid",
               align = "center") %>% 
   hc_credits(enabled = TRUE, 
-             text = "Fonte: Observatório de Ministério da Defesa",
+             text = "Fonte: Observatório do Ministério da Defesa",
              style = list(fontSize = "10px"),
              fontFamily = "Mermaid") %>% 
   hc_xAxis(title = list(text = "")) %>%
@@ -262,7 +263,7 @@ contratado_freq %>%
               fontFamily = "Mermaid",
               align = "center") %>% 
   hc_credits(enabled = TRUE, 
-             text = "Fonte: Observatório de Ministério da Defesa",
+             text = "Fonte: Observatório do Ministério da Defesa",
              style = list(fontSize = "10px"),
              fontFamily = "Mermaid") %>% 
   hc_xAxis(title = list(text = "")) %>%
@@ -286,7 +287,7 @@ contratado_freq %>%
               fontFamily = "Mermaid",
               align = "center") %>% 
   hc_credits(enabled = TRUE, 
-             text = "Fonte: Observatório de Ministério da Defesa",
+             text = "Fonte: Observatório do Ministério da Defesa",
              style = list(fontSize = "10px"),
              fontFamily = "Mermaid") %>% 
   hc_xAxis(title = list(text = "")) %>%
@@ -321,7 +322,7 @@ ug_freq %>%
               fontFamily = "Mermaid",
               align = "center") %>% 
   hc_credits(enabled = TRUE, 
-             text = "Fonte: Observatório de Ministério da Defesa",
+             text = "Fonte: Observatório do Ministério da Defesa",
              style = list(fontSize = "10px"),
              fontFamily = "Mermaid") %>% 
   hc_xAxis(title = list(text = "")) %>%
@@ -345,7 +346,7 @@ ug_freq %>%
               fontFamily = "Mermaid",
               align = "center") %>% 
   hc_credits(enabled = TRUE, 
-             text = "Fonte: Observatório de Ministério da Defesa",
+             text = "Fonte: Observatório do Ministério da Defesa",
              style = list(fontSize = "10px"),
              fontFamily = "Mermaid") %>% 
   hc_xAxis(title = list(text = "")) %>%
@@ -369,7 +370,7 @@ ug_freq %>%
               fontFamily = "Mermaid",
               align = "center") %>% 
   hc_credits(enabled = TRUE, 
-             text = "Fonte: Observatório de Ministério da Defesa",
+             text = "Fonte: Observatório do Ministério da Defesa",
              style = list(fontSize = "10px"),
              fontFamily = "Mermaid") %>% 
   hc_xAxis(title = list(text = "")) %>%
@@ -393,7 +394,7 @@ ug_freq %>%
               fontFamily = "Mermaid",
               align = "center") %>% 
   hc_credits(enabled = TRUE, 
-             text = "Fonte: Observatório de Ministério da Defesa",
+             text = "Fonte: Observatório do Ministério da Defesa",
              style = list(fontSize = "10px"),
              fontFamily = "Mermaid") %>% 
   hc_xAxis(title = list(text = "")) %>%
@@ -408,9 +409,11 @@ ug_freq %>%
 materiais_fab_freq <- geral %>%
   filter(forca %in% "Força Aérea Brasileira") %>% 
   group_by(material, forca) %>%
-  summarise (total = sum(valor, na.rm = FALSE)) %>%
-  arrange(desc(total))
+  summarise (total = sum(valor, na.rm = FALSE))
 
+#Simplificando algumas strings
+materiais_fab_freq$material <- materiais_fab_freq$material %>% 
+  str_replace_all("Serviço De Engenharia Para", "")
 
 #Principais materiais
 materiais_fab_freq %>%
@@ -426,7 +429,7 @@ materiais_fab_freq %>%
            fontFamily = "Mermaid",
            align = "center") %>% 
   hc_credits(enabled = TRUE, 
-             text = "Fonte: Observatório de Ministério da Defesa",
+             text = "Fonte: Observatório do Ministério da Defesa",
              style = list(fontSize = "10px"),
              fontFamily = "Mermaid") %>% 
   hc_xAxis(title = list(text = "")) %>%
@@ -457,7 +460,7 @@ hchart(mb_tempo,
            fontFamily = "Mermaid",
            align = "center") %>% 
   hc_credits(enabled = TRUE, 
-             text = "Fonte: Observatório de Ministério da Defesa",
+             text = "Fonte: Observatório do Ministério da Defesa",
              style = list(fontSize = "10px"),
              fontFamily = "Mermaid") %>% 
   hc_xAxis(title = list(text = "")) %>%
