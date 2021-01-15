@@ -5,6 +5,22 @@ library(tidytext)
 library(wordcloud2)
 library(highcharter)
 
+#Criando tema OMD
+tema_omd <- hc_theme(colors = c("#32CD32", "#28a428", "#1e7b1e", "#145214"),
+                     chart = list(backgroundColor = "#FBFBFB"),
+                     title = list(style = list(color = "#831D1C", 
+                                               fontWeight = "bold", 
+                                               fontSize = "16px",
+                                               fontFamily = "Frank Ruhl Libre",
+                                               align = "center")),
+                     subtitle = list(style = list(color = "#222222",
+                                                  fontSize = "12px",
+                                                  fontFamily = "Barlow",
+                                                  align = "center")),
+                     legend = list(itemStyle = list(fontFamily = "Barlow",
+                                                    color = "#831D1C"),
+                                   itemHoverStyle = list(color = "gray")))
+
 #Importando banco de dados transfomado (as etapas de raspagem e preparação dos dados para se obter este data frame estão descritas abaixo)
 setwd("C:\\Users\\Luã Braga\\Desktop\\projetos\\pandemia\\noticias")
 corpusdf <- read.csv("corpusdf.csv", header = TRUE, sep = ",")
@@ -131,7 +147,7 @@ tokens_freq <- tokens %>%
 
 #Removendo linhas específicas
 tokens_freq <- tokens_freq[-c(31, 26),]
-
+library(RColorBrewer)
 ########
 ## EB ##
 ########
@@ -144,8 +160,10 @@ cloud_eb <- tokens_freq %>%
 set.seed(1234)
 wordcloud2(data=cloud_eb, size=1.6)
 
+paleta_omd <- rep(c('red', 'skyblue'))
+
 #Barplot
-tokens_freq %>%
+g1 <- tokens_freq %>%
   filter(forca == "Exército Brasileiro") %>% 
   select(forca, tokens, tf_idf) %>% 
   group_by(forca) %>%
@@ -154,19 +172,14 @@ tokens_freq %>%
   hchart('bar', 
          hcaes(x = tokens, y = tf_idf),
          name = "TF-IDF") %>% 
-  hc_title(text = "Termos mais relevantes nas notícias do Exército Brasileiro", 
-           style = list(fontWeight = "bold", fontSize = "14px"),
-           fontFamily = "Mermaid",
-           align = "center") %>% 
-  hc_subtitle(text = "Relevância estimada pela métrica TF-IDF", 
-              fontFamily = "Mermaid",
-              align = "center") %>% 
+  hc_title(text = "Termos mais relevantes nas notícias do Exército Brasileiro") %>% 
+  hc_subtitle(text = "Relevância estimada pela métrica TF-IDF") %>% 
   hc_credits(enabled = TRUE, 
-             text = "Fonte: Observatório do Ministério da Defesa",
-             style = list(fontSize = "10px"),
-             fontFamily = "Mermaid") %>% 
+             text = "Fonte: Observatório do Ministério da Defesa") %>% 
   hc_xAxis(title = list(text = "")) %>%
   hc_yAxis(title = list(text = "TF-IDF"))
+
+hc_add_theme(g1, tema_omd)
 
 ########
 ## MB ##
@@ -181,7 +194,7 @@ set.seed(1234)
 wordcloud2(data=cloud_mb, size=1.6)
 
 #Barplot
-tokens_freq %>%
+g2 <- tokens_freq %>%
   filter(forca == "Marinha do Brasil") %>% 
   select(forca, tokens, tf_idf) %>% 
   group_by(forca) %>%
@@ -190,19 +203,14 @@ tokens_freq %>%
   hchart('bar', 
          hcaes(x = tokens, y = tf_idf),
          name = "TF-IDF") %>% 
-  hc_title(text = "Termos mais relevantes nas notícias da Marinha do Brasil", 
-           style = list(fontWeight = "bold", fontSize = "14px"),
-           fontFamily = "Mermaid",
-           align = "center") %>% 
-  hc_subtitle(text = "Relevância estimada pela métrica TF-IDF", 
-              fontFamily = "Mermaid",
-              align = "center") %>% 
+  hc_title(text = "Termos mais relevantes nas notícias da Marinha do Brasil") %>% 
+  hc_subtitle(text = "Relevância estimada pela métrica TF-IDF") %>% 
   hc_credits(enabled = TRUE, 
-             text = "Fonte: Observatório do Ministério da Defesa",
-             style = list(fontSize = "10px"),
-             fontFamily = "Mermaid") %>% 
+             text = "Fonte: Observatório do Ministério da Defesa") %>% 
   hc_xAxis(title = list(text = "")) %>%
   hc_yAxis(title = list(text = "TF-IDF"))
+
+hc_add_theme(g2, tema_omd)
 
 ########
 ## FAB ##
@@ -217,7 +225,7 @@ set.seed(1234)
 wordcloud2(data=cloud_fab, size=1.6)
 
 #Barplot
-tokens_freq %>%
+g3 <- tokens_freq %>%
   filter(forca == "Força Aérea Brasileira") %>% 
   select(forca, tokens, tf_idf) %>% 
   group_by(forca) %>%
@@ -226,16 +234,11 @@ tokens_freq %>%
   hchart('bar', 
          hcaes(x = tokens, y = tf_idf),
          name = "TF-IDF") %>% 
-  hc_title(text = "Termos mais relevantes nas notícias da Força Aérea Brasileira", 
-           style = list(fontWeight = "bold", fontSize = "14px"),
-           fontFamily = "Mermaid",
-           align = "center") %>% 
-  hc_subtitle(text = "Relevância estimada pela métrica TF-IDF", 
-              fontFamily = "Mermaid",
-              align = "center") %>% 
+  hc_title(text = "Termos mais relevantes nas notícias da Força Aérea Brasileira") %>% 
+  hc_subtitle(text = "Relevância estimada pela métrica TF-IDF") %>% 
   hc_credits(enabled = TRUE, 
-             text = "Fonte: Observatório do Ministério da Defesa",
-             style = list(fontSize = "10px"),
-             fontFamily = "Mermaid") %>% 
+             text = "Fonte: Observatório do Ministério da Defesa") %>% 
   hc_xAxis(title = list(text = "")) %>%
   hc_yAxis(title = list(text = "TF-IDF"))
+
+hc_add_theme(g3, tema_omd)
