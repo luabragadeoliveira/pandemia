@@ -9,6 +9,21 @@ options(scipen = 999)
 #Fixa diretório
 setwd("C:\\Users\\Luã Braga\\Desktop\\projetos\\pandemia\\despesas")
 
+#Criando tema OMD
+tema_omd <- hc_theme(colors = c("#32CD32", "#28a428", "#1e7b1e", "#145214"),
+                     chart = list(backgroundColor = "#FBFBFB"),
+                     title = list(style = list(color = "#831D1C", 
+                                               fontWeight = "bold", 
+                                               fontSize = "16px",
+                                               fontFamily = "Frank Ruhl Libre",
+                                               align = "center")),
+                     subtitle = list(style = list(color = "#222222",
+                                                  fontSize = "12px",
+                                                  fontFamily = "Barlow",
+                                                  align = "center")),
+                     legend = list(itemStyle = list(fontFamily = "Barlow",
+                                                    color = "#831D1C"),
+                                   itemHoverStyle = list(color = "gray")))
 
 #######################################
 # Importação e manipulação dos dados
@@ -113,26 +128,21 @@ geral <- bind_rows(eb, mb, fab, hfa)
 summary(geral$valor) #o máximo está muito distante da média, o que indica outliers
 
 #Boxplot sem outliers
-hcboxplot(x = geral$valor,
+g1 <- hcboxplot(x = geral$valor,
           var = geral$forca,
           outliers = FALSE,
           tooltip = list(valueDecimals = 2, valuePrefix = "R$"),
           name = "Estatísticas Descritivas",
-          color = "black") %>% 
+          color = "#222222") %>% 
   hc_chart(type = "column") %>%
-  hc_title(text = "Distribuição das despesas emergenciais por Força Armada", 
-           style = list(fontWeight = "bold", fontSize = "14px"),
-           fontFamily = "Mermaid",
-           align = "center") %>% 
-  hc_subtitle(text = "Excluídas as compras de grande vulto (outliers)", 
-              fontFamily = "Mermaid",
-              align = "center") %>% 
+  hc_title(text = "Distribuição das despesas emergenciais por Força Armada") %>% 
+  hc_subtitle(text = "Excluídas as compras de grande vulto (outliers)") %>% 
   hc_credits(enabled = TRUE, 
-             text = "Fonte: Observatório do Ministério da Defesa",
-             style = list(fontSize = "10px"),
-             fontFamily = "Mermaid") %>% 
+             text = "Fonte: Observatório do Ministério da Defesa") %>% 
   hc_xAxis(title = list(text = "")) %>%
   hc_yAxis(title = list(text = "Valor (R$)"))
+
+hc_add_theme(g1, tema_omd)
 
 #### GASTOS POR FORÇA
 
@@ -143,21 +153,18 @@ forca_freq <- geral %>%
   arrange(desc(total))
 
 #Barplot
-forca_freq %>% 
+g2 <- forca_freq %>% 
   hchart('column', 
-         hcaes(x = forca, y = total, color = forca),
+         hcaes(x = forca, y = total),
          tooltip = list(valueDecimals = 2, valuePrefix = "R$"),
          name = "Valor total dos contratos") %>% 
-  hc_title(text = "Valor das despesas emergenciais por Força Armada", 
-           style = list(fontWeight = "bold", fontSize = "14px"),
-           fontFamily = "Mermaid",
-           align = "center") %>% 
+  hc_title(text = "Valor das despesas emergenciais por Força Armada") %>% 
   hc_credits(enabled = TRUE, 
-             text = "Fonte: Observatório do Ministério da Defesa",
-             style = list(fontSize = "10px"),
-             fontFamily = "Mermaid") %>% 
+             text = "Fonte: Observatório do Ministério da Defesa") %>% 
   hc_xAxis(title = list(text = "")) %>%
   hc_yAxis(title = list(text = "Valor (R$)"))
+
+hc_add_theme(g2, tema_omd)
 
 
 ################################
@@ -175,30 +182,24 @@ contratado_freq <- geral %>%
 contratado_freq <- contratado_freq[-c(4),]
 
 #Todas
-contratado_freq %>%
+g3 <- contratado_freq %>%
   group_by(forca) %>%
   slice_max(total, n = 15) %>%
   ungroup() %>% 
   hchart("treemap",
-         hcaes(x = contratado, value = total, color = total),
+         hcaes(x = contratado, value = total),
          tooltip = list(valueDecimals = 2, valuePrefix = "R$")) %>% 
-  hc_title(text = "Principais empresas contratadas", 
-           style = list(fontWeight = "bold", fontSize = "14px"),
-           fontFamily = "Mermaid",
-           align = "center") %>% 
-  hc_subtitle(text = "Pessoas jurídicas ou físicas contratadas para provisão de produtos e serviços emergenciais para combate à Covid-19", 
-              fontFamily = "Mermaid",
-              align = "center") %>% 
+  hc_title(text = "Principais empresas contratadas") %>% 
+  hc_subtitle(text = "Pessoas jurídicas ou físicas contratadas para provisão de produtos e serviços emergenciais para combate à Covid-19") %>% 
   hc_credits(enabled = TRUE, 
-             text = "Fonte: Observatório do Ministério da Defesa",
-             style = list(fontSize = "10px"),
-             fontFamily = "Mermaid") %>% 
+             text = "Fonte: Observatório do Ministério da Defesa") %>% 
   hc_xAxis(title = list(text = "")) %>%
   hc_yAxis(title = list(text = "Valor (R$)"))
 
+hc_add_theme(g3, tema_omd)
 
 #EB
-contratado_freq %>%
+g4 <- contratado_freq %>%
   filter(forca %in% "Exército Brasileiro") %>% 
   group_by(forca) %>%
   slice_max(total, n = 15) %>%
@@ -207,22 +208,17 @@ contratado_freq %>%
          hcaes(x = contratado, y = total),
          name = "Valor total dos contratos",
          tooltip = list(valueDecimals = 2, valuePrefix = "R$")) %>% 
-  hc_title(text = "Principais empresas contratadas pelo Exército Brasileiro", 
-           style = list(fontWeight = "bold", fontSize = "14px"),
-           fontFamily = "Mermaid",
-           align = "center") %>% 
-  hc_subtitle(text = "As 15 principais pessoas jurídicas ou físicas contratadas para provisão de produtos e serviços emergenciais para combate à Covid-19", 
-              fontFamily = "Mermaid",
-              align = "center") %>% 
+  hc_title(text = "Principais empresas contratadas pelo Exército Brasileiro") %>% 
+  hc_subtitle(text = "As 15 principais pessoas jurídicas ou físicas contratadas para provisão de produtos e serviços emergenciais para combate à Covid-19") %>% 
   hc_credits(enabled = TRUE, 
-             text = "Fonte: Observatório do Ministério da Defesa",
-             style = list(fontSize = "10px"),
-             fontFamily = "Mermaid") %>% 
+             text = "Fonte: Observatório do Ministério da Defesa") %>% 
   hc_xAxis(title = list(text = "")) %>%
   hc_yAxis(title = list(text = "Valor (R$)"))
 
+hc_add_theme(g4, tema_omd)
+
 #MB
-contratado_freq %>%
+g5 <- contratado_freq %>%
   filter(forca %in% "Marinha do Brasil") %>% 
   group_by(forca) %>%
   slice_max(total, n = 15) %>%
@@ -231,22 +227,17 @@ contratado_freq %>%
          hcaes(x = contratado, y = total),
          name = "Valor total dos contratos",
          tooltip = list(valueDecimals = 2, valuePrefix = "R$")) %>% 
-  hc_title(text = "Principais empresas contratadas pela Marinha do Brasil", 
-           style = list(fontWeight = "bold", fontSize = "14px"),
-           fontFamily = "Mermaid",
-           align = "center") %>% 
-  hc_subtitle(text = "As 15 principais pessoas jurídicas ou físicas contratadas para provisão de produtos e serviços emergenciais para combate à Covid-19", 
-              fontFamily = "Mermaid",
-              align = "center") %>% 
+  hc_title(text = "Principais empresas contratadas pela Marinha do Brasil") %>% 
+  hc_subtitle(text = "As 15 principais pessoas jurídicas ou físicas contratadas para provisão de produtos e serviços emergenciais para combate à Covid-19") %>% 
   hc_credits(enabled = TRUE, 
-             text = "Fonte: Observatório do Ministério da Defesa",
-             style = list(fontSize = "10px"),
-             fontFamily = "Mermaid") %>% 
+             text = "Fonte: Observatório do Ministério da Defesa") %>% 
   hc_xAxis(title = list(text = "")) %>%
   hc_yAxis(title = list(text = "Valor (R$)"))
 
+hc_add_theme(g5, tema_omd)
+
 #FAB
-contratado_freq %>%
+g6 <- contratado_freq %>%
   filter(forca %in% "Força Aérea Brasileira") %>% 
   group_by(forca) %>%
   slice_max(total, n = 15) %>%
@@ -255,22 +246,17 @@ contratado_freq %>%
          hcaes(x = contratado, y = total),
          name = "Valor total dos contratos",
          tooltip = list(valueDecimals = 2, valuePrefix = "R$")) %>% 
-  hc_title(text = "Principais empresas contratadas pela Força Aérea Brasileira", 
-           style = list(fontWeight = "bold", fontSize = "14px"),
-           fontFamily = "Mermaid",
-           align = "center") %>% 
-  hc_subtitle(text = "As 15 principais pessoas jurídicas ou físicas contratadas para provisão de produtos e serviços emergenciais para combate à Covid-19", 
-              fontFamily = "Mermaid",
-              align = "center") %>% 
+  hc_title(text = "Principais empresas contratadas pela Força Aérea Brasileira") %>% 
+  hc_subtitle(text = "As 15 principais pessoas jurídicas ou físicas contratadas para provisão de produtos e serviços emergenciais para combate à Covid-19") %>% 
   hc_credits(enabled = TRUE, 
-             text = "Fonte: Observatório do Ministério da Defesa",
-             style = list(fontSize = "10px"),
-             fontFamily = "Mermaid") %>% 
+             text = "Fonte: Observatório do Ministério da Defesa") %>% 
   hc_xAxis(title = list(text = "")) %>%
   hc_yAxis(title = list(text = "Valor (R$)"))
 
+hc_add_theme(g6, tema_omd)
+
 #HFA
-contratado_freq %>%
+g7 <- contratado_freq %>%
   filter(forca %in% "Hospital das Forças Armadas") %>% 
   group_by(forca) %>%
   slice_max(total, n = 15) %>%
@@ -279,20 +265,14 @@ contratado_freq %>%
          hcaes(x = contratado, y = total),
          name = "Valor total dos contratos",
          tooltip = list(valueDecimals = 2, valuePrefix = "R$")) %>% 
-  hc_title(text = "Principais empresas contratadas pelo Hospital das Forças Armadas", 
-           style = list(fontWeight = "bold", fontSize = "14px"),
-           fontFamily = "Mermaid",
-           align = "center") %>% 
-  hc_subtitle(text = "As 15 principais pessoas jurídicas ou físicas contratadas para provisão de produtos e serviços emergenciais para combate à Covid-19", 
-              fontFamily = "Mermaid",
-              align = "center") %>% 
+  hc_title(text = "Principais empresas contratadas pelo Hospital das Forças Armadas") %>% 
+  hc_subtitle(text = "As 15 principais pessoas jurídicas ou físicas contratadas para provisão de produtos e serviços emergenciais para combate à Covid-19") %>% 
   hc_credits(enabled = TRUE, 
-             text = "Fonte: Observatório do Ministério da Defesa",
-             style = list(fontSize = "10px"),
-             fontFamily = "Mermaid") %>% 
+             text = "Fonte: Observatório do Ministério da Defesa") %>% 
   hc_xAxis(title = list(text = "")) %>%
   hc_yAxis(title = list(text = "Valor (R$)"))
 
+hc_add_theme(g7, tema_omd)
 
 ################################
 # Gastos por Unidade Gestora
@@ -307,29 +287,24 @@ ug_freq <- geral %>%
   arrange(desc(total))
 
 #Todas
-ug_freq %>%
+g8 <- ug_freq %>%
   group_by(forca) %>%
   slice_max(total, n = 15) %>%
   ungroup() %>% 
   hchart("treemap",
-         hcaes(x = ug, value = total, color = total),
+         hcaes(x = ug, value = total),
          tooltip = list(valueDecimals = 2, valuePrefix = "R$")) %>% 
-  hc_title(text = "Valor das despesas emergenciais por Unidade Gestora", 
-           style = list(fontWeight = "bold", fontSize = "14px"),
-           fontFamily = "Mermaid",
-           align = "center") %>% 
-  hc_subtitle(text = "Organizações militares que mais realizaram despesas emergenciais para combate à Covid-19", 
-              fontFamily = "Mermaid",
-              align = "center") %>% 
+  hc_title(text = "Valor das despesas emergenciais por Unidade Gestora") %>% 
+  hc_subtitle(text = "Organizações militares que mais realizaram despesas emergenciais para combate à Covid-19") %>% 
   hc_credits(enabled = TRUE, 
-             text = "Fonte: Observatório do Ministério da Defesa",
-             style = list(fontSize = "10px"),
-             fontFamily = "Mermaid") %>% 
+             text = "Fonte: Observatório do Ministério da Defesa") %>% 
   hc_xAxis(title = list(text = "")) %>%
   hc_yAxis(title = list(text = "Valor (R$)"))
 
+hc_add_theme(g8, tema_omd)
+
 #EB
-ug_freq %>%
+g9 <- ug_freq %>%
   filter(forca %in% "Exército Brasileiro") %>% 
   group_by(forca) %>%
   slice_max(total, n = 15) %>%
@@ -338,22 +313,17 @@ ug_freq %>%
          hcaes(x = ug, y = total),
          name = "Valor total dos contratos",
          tooltip = list(valueDecimals = 2, valuePrefix = "R$")) %>% 
-  hc_title(text = "Valor das despesas emergenciais por Unidade Gestora do Exército Brasileiro", 
-           style = list(fontWeight = "bold", fontSize = "14px"),
-           fontFamily = "Mermaid",
-           align = "center") %>% 
-  hc_subtitle(text = "As 15 organizações militares do EB que mais realizaram despesas emergenciais para combate à Covid-19", 
-              fontFamily = "Mermaid",
-              align = "center") %>% 
+  hc_title(text = "Valor das despesas emergenciais por Unidade Gestora do Exército Brasileiro") %>% 
+  hc_subtitle(text = "As 15 organizações militares do EB que mais realizaram despesas emergenciais para combate à Covid-19") %>% 
   hc_credits(enabled = TRUE, 
-             text = "Fonte: Observatório do Ministério da Defesa",
-             style = list(fontSize = "10px"),
-             fontFamily = "Mermaid") %>% 
+             text = "Fonte: Observatório do Ministério da Defesa") %>% 
   hc_xAxis(title = list(text = "")) %>%
   hc_yAxis(title = list(text = "Valor (R$)"))
 
+hc_add_theme(g9, tema_omd)
+
 #MB
-ug_freq %>%
+g10 <- ug_freq %>%
   filter(forca %in% "Marinha do Brasil") %>% 
   group_by(forca) %>%
   slice_max(total, n = 15) %>%
@@ -362,22 +332,17 @@ ug_freq %>%
          hcaes(x = ug, y = total),
          name = "Valor total dos contratos",
          tooltip = list(valueDecimals = 2, valuePrefix = "R$")) %>% 
-  hc_title(text = "Valor das despesas emergenciais por Unidade Gestora da Marinha do Brasil", 
-           style = list(fontWeight = "bold", fontSize = "14px"),
-           fontFamily = "Mermaid",
-           align = "center") %>% 
-  hc_subtitle(text = "As 15 organizações militares da MB que mais realizaram despesas emergenciais para combate à Covid-19", 
-              fontFamily = "Mermaid",
-              align = "center") %>% 
+  hc_title(text = "Valor das despesas emergenciais por Unidade Gestora da Marinha do Brasil") %>% 
+  hc_subtitle(text = "As 15 organizações militares da MB que mais realizaram despesas emergenciais para combate à Covid-19") %>% 
   hc_credits(enabled = TRUE, 
-             text = "Fonte: Observatório do Ministério da Defesa",
-             style = list(fontSize = "10px"),
-             fontFamily = "Mermaid") %>% 
+             text = "Fonte: Observatório do Ministério da Defesa") %>% 
   hc_xAxis(title = list(text = "")) %>%
   hc_yAxis(title = list(text = "Valor (R$)"))
 
+hc_add_theme(g10, tema_omd)
+
 #FAB
-ug_freq %>%
+g11 <- ug_freq %>%
   filter(forca %in% "Força Aérea Brasileira") %>% 
   group_by(forca) %>%
   slice_max(total, n = 15) %>%
@@ -386,20 +351,14 @@ ug_freq %>%
          hcaes(x = ug, y = total),
          name = "Valor total dos contratos",
          tooltip = list(valueDecimals = 2, valuePrefix = "R$")) %>% 
-  hc_title(text = "Valor das despesas emergenciais por Unidade Gestora da Força Aérea Brasileira", 
-           style = list(fontWeight = "bold", fontSize = "14px"),
-           fontFamily = "Mermaid",
-           align = "center") %>% 
-  hc_subtitle(text = "As 15 organizações militares da FAB que mais realizaram despesas emergenciais para combate à Covid-19", 
-              fontFamily = "Mermaid",
-              align = "center") %>% 
+  hc_title(text = "Valor das despesas emergenciais por Unidade Gestora da Força Aérea Brasileira") %>% 
+  hc_subtitle(text = "As 15 organizações militares da FAB que mais realizaram despesas emergenciais para combate à Covid-19") %>% 
   hc_credits(enabled = TRUE, 
-             text = "Fonte: Observatório do Ministério da Defesa",
-             style = list(fontSize = "10px"),
-             fontFamily = "Mermaid") %>% 
+             text = "Fonte: Observatório do Ministério da Defesa") %>% 
   hc_xAxis(title = list(text = "")) %>%
   hc_yAxis(title = list(text = "Valor (R$)"))
 
+hc_add_theme(g11, tema_omd)
 
 ################################
 # Principais materiais FAB
@@ -416,7 +375,7 @@ materiais_fab_freq$material <- materiais_fab_freq$material %>%
   str_replace_all("Serviço De Engenharia Para", "")
 
 #Principais materiais
-materiais_fab_freq %>%
+g12 <- materiais_fab_freq %>%
   group_by(forca) %>%
   slice_max(total, n = 15) %>%
   ungroup() %>%
@@ -424,16 +383,13 @@ materiais_fab_freq %>%
          hcaes(x = material, y = total),
          name = "Valor gasto",
          tooltip = list(valueDecimals = 2, valuePrefix = "R$")) %>% 
-  hc_title(text = "Principais produtos ou serviços adquiridos pela Força Aérea Brasileira no combate à Covid-19", 
-           style = list(fontWeight = "bold", fontSize = "14px"),
-           fontFamily = "Mermaid",
-           align = "center") %>% 
+  hc_title(text = "Principais produtos ou serviços adquiridos pela Força Aérea Brasileira no combate à Covid-19") %>% 
   hc_credits(enabled = TRUE, 
-             text = "Fonte: Observatório do Ministério da Defesa",
-             style = list(fontSize = "10px"),
-             fontFamily = "Mermaid") %>% 
+             text = "Fonte: Observatório do Ministério da Defesa") %>% 
   hc_xAxis(title = list(text = "")) %>%
   hc_yAxis(title = list(text = "Valor (R$)"))
+
+hc_add_theme(g12, tema_omd)
 
 ################################
 # Série Temporal MB
@@ -450,6 +406,18 @@ mb_tempo <- mb %>%
 
 #Transformando em XTS
 mb_tempo <- as.xts(mb_tempo)
+
+#Gráfico
+g13 <- hchart(mb_tempo,
+       tooltip = list(valueDecimals = 2, valuePrefix = "R$"),
+       name = "Valor gasto") %>% 
+  hc_title(text = "Evolução das despesas emergenciais da Marinha do Brasil no combate à Covid-19") %>% 
+  hc_credits(enabled = TRUE, 
+             text = "Fonte: Observatório do Ministério da Defesa") %>% 
+  hc_xAxis(title = list(text = "")) %>%
+  hc_yAxis(title = list(text = "Valor (R$)"))
+  
+hc_add_theme(g13, tema_omd)
 
 #Gráfico
 hchart(mb_tempo,
