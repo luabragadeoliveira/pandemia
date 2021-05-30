@@ -12,11 +12,12 @@ library(RColorBrewer)
 library(ggspatial)
 library(geojsonio)
 library(geobr)
+library(ggpubr)
 
-#Desabilita notaÁ„o cientÌfica
+#Desabilita nota√ß√£o cient√≠fica
 options(scipen=999)
 
-#DiretÛrio
+#Diret√≥rio
 setwd("C:\\Users\\luaoliveira\\Desktop\\Pandemia\\despesas")
 
 #### Importa as bases
@@ -24,11 +25,11 @@ setwd("C:\\Users\\luaoliveira\\Desktop\\Pandemia\\despesas")
 #Fonte dos dados: https://www.gov.br/compras/pt-br/painel-covid
 #Filtros: 
 #Ano: 2020
-#Modalidade: Dispensa de LicitaÁ„o
+#Modalidade: Dispensa de Licita√ß√£o
 #Poder: Executivo
 #Esfera: Federal
-#Lei: Lei n∫ 13079 (EmergÍncia CoronavÌrus)
-#”rg„o: Comando do ExÈrcito / Comando da Marinha / Comando da Aeron·utica
+#Lei: Lei n¬∫ 13079 (Emerg√™ncia Coronav√≠rus)
+#√ìrg√£o: Comando do Ex√©rcito / Comando da Marinha / Comando da Aeron√°utica
 
 eb_uasg <- read_csv("eb_uasg.csv")
 eb_empenho <- read_csv("eb_empenho.csv")
@@ -47,13 +48,13 @@ fab_fornecedor <- read_csv("fab_fornecedor.csv")
 ## uasg
 
 eb_uasg <- eb_uasg %>% 
-  mutate("ForÁa Singular" = "ExÈrcito Brasileiro")
+  mutate("For√ßa Singular" = "Ex√©rcito Brasileiro")
 
 mb_uasg <- mb_uasg %>% 
-  mutate("ForÁa Singular" = "Marinha do Brasil")
+  mutate("For√ßa Singular" = "Marinha do Brasil")
 
 fab_uasg <- fab_uasg %>% 
-  mutate("ForÁa Singular" = "ForÁa AÈrea Brasileira")
+  mutate("For√ßa Singular" = "For√ßa A√©rea Brasileira")
 
 uasg <- bind_rows(eb_uasg, mb_uasg, fab_uasg)
 
@@ -62,13 +63,13 @@ rm(eb_uasg, mb_uasg, fab_uasg)
 ## Empenho
 
 eb_empenho <- eb_empenho %>% 
-  mutate("ForÁa Singular" = "ExÈrcito Brasileiro")
+  mutate("For√ßa Singular" = "Ex√©rcito Brasileiro")
 
 mb_empenho <- mb_empenho %>% 
-  mutate("ForÁa Singular" = "Marinha do Brasil")
+  mutate("For√ßa Singular" = "Marinha do Brasil")
 
 fab_empenho <- fab_empenho %>% 
-  mutate("ForÁa Singular" = "ForÁa AÈrea Brasileira")
+  mutate("For√ßa Singular" = "For√ßa A√©rea Brasileira")
 
 empenho <- bind_rows(eb_empenho, mb_empenho, fab_empenho)
 
@@ -77,20 +78,20 @@ rm(eb_empenho, mb_empenho, fab_empenho)
 ## Fornecedor
 
 eb_fornecedor <- eb_fornecedor %>% 
-  mutate("ForÁa Singular" = "ExÈrcito Brasileiro")
+  mutate("For√ßa Singular" = "Ex√©rcito Brasileiro")
 
 mb_fornecedor <- mb_fornecedor %>% 
-  mutate("ForÁa Singular" = "Marinha do Brasil")
+  mutate("For√ßa Singular" = "Marinha do Brasil")
 
 fab_fornecedor <- fab_fornecedor %>% 
-  mutate("ForÁa Singular" = "ForÁa AÈrea Brasileira")
+  mutate("For√ßa Singular" = "For√ßa A√©rea Brasileira")
 
 fornecedor <- bind_rows(eb_fornecedor, mb_fornecedor, fab_fornecedor)
 
 rm(eb_fornecedor, mb_fornecedor, fab_fornecedor)
 
 ######################################################
-############# EstatÌsticas Descritivas ###############
+############# Estat√≠sticas Descritivas ###############
 #####################################################
 
 dfSummary(uasg)
@@ -98,34 +99,34 @@ dfSummary(empenho)
 dfSummary(fornecedor)
 
 ### Perguntas
-# Quanto foi gasto no total por cada ForÁa?
-# Como se deu a distribuiÁ„o dos gastos de cada ForÁa?
+# Quanto foi gasto no total por cada For√ßa?
+# Como se deu a distribui√ß√£o dos gastos de cada For√ßa?
 # Quais foram os itens mais adquiridos?
 # Quais itens representaram os maiores gastos?
 # Quais foram os fornecedores mais contratados?
 # Quais foram os fornecedores com maiores valores de contratos?
 # Quais uasgs realizaram mais compras?
 # Quais uasgs tiveram maiores despesas totais? 
-# Como os gastos de cada ForÁa Singular foram distribuÌdos pelo Brasil?
-# Como os gastos evoluÌram ao longo do ano?
+# Como os gastos de cada For√ßa Singular foram distribu√≠dos pelo Brasil?
+# Como os gastos evolu√≠ram ao longo do ano?
 
 ######################################################
-##### Quanto foi gasto no total por cada ForÁa?######
+##### Quanto foi gasto no total por cada For√ßa?######
 #####################################################
 
 uasg %>% 
-  group_by(`ForÁa Singular`) %>% 
+  group_by(`For√ßa Singular`) %>% 
   summarise(Total = sum(`Valor Total da Compra`)) %>% 
-  mutate(`ForÁa Singular` = fct_reorder(`ForÁa Singular`, Total, .desc = TRUE)) %>%
-  ggplot(aes(`ForÁa Singular`, Total, fill = `ForÁa Singular`)) +
+  mutate(`For√ßa Singular` = fct_reorder(`For√ßa Singular`, Total, .desc = TRUE)) %>%
+  ggplot(aes(`For√ßa Singular`, Total, fill = `For√ßa Singular`)) +
   geom_bar(stat="identity", width=0.5, fill = c("darkgreen", "darkblue", "darkred")) +
   scale_y_continuous(labels = label_dollar(prefix = "R$")) +
   scale_x_discrete(labels = label_wrap(width = 5)) +
-  labs(title = "Valor das despesas emergenciais por ForÁa Armada",
-       subtitle = "O ExÈrcito Brasileiro realizou mais gastos emergenciais no combate ‡ pandemia em 2020",
+  labs(title = "Valor das despesas emergenciais por For√ßa Armada",
+       subtitle = "O Ex√©rcito Brasileiro realizou mais gastos emergenciais no combate √† pandemia em 2020",
        x = "",
        y = "",
-       caption = "") +
+       caption = "Fonte: Observat√≥rio do Minist√©rio da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_classic() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
   theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5)) +
@@ -133,85 +134,89 @@ uasg %>%
   theme(axis.text.x=element_text(size=16, vjust=0.5)) +
   theme(axis.text.y=element_text(size=16, vjust=0.5))
 
-#ExÈrcito gastou nitidamente mais.
+#Ex√©rcito gastou nitidamente mais.
 
 #############################################################
-##### Como de deu a distribuiÁ„o dos gastos cada ForÁa?######
+##### Como de deu a distribui√ß√£o dos gastos cada For√ßa?######
 #############################################################
 
-## EstatÌsticas descritivas
+## Estat√≠sticas descritivas
 
 #Geral
 descr(fornecedor$`Valor Total do Item`)
 
 #EB
 fornecedor %>% 
-  filter(`ForÁa Singular` == "ExÈrcito Brasileiro") %>% 
+  filter(`For√ßa Singular` == "Ex√©rcito Brasileiro") %>% 
   select(`Valor Total do Item`) %>% 
   descr()
 
 #MB
 fornecedor %>% 
-  filter(`ForÁa Singular` == "Marinha do Brasil") %>% 
+  filter(`For√ßa Singular` == "Marinha do Brasil") %>% 
   select(`Valor Total do Item`) %>% 
   descr()
 
 #FAB
 fornecedor %>% 
-  filter(`ForÁa Singular` == "ForÁa AÈrea Brasileira") %>% 
+  filter(`For√ßa Singular` == "For√ßa A√©rea Brasileira") %>% 
   select(`Valor Total do Item`) %>% 
   descr()
 
-## AquisiÁıes extremamentes concentradas! Nem precisava fazer teste de normalidade e homogeneidade de vari‚ncias, mas vamos ver:
+## Aquisi√ß√µes extremamentes concentradas! Nem precisava fazer teste de normalidade e homogeneidade de vari√¢ncias, mas vamos ver:
 
 #Testes de normalidade (Shapiro-Wilk e Anderson-Darling)
 shapiro.test(fornecedor$`Valor Total do Item`[0:5000])
 ad.test(fornecedor$`Valor Total do Item`)
 
-#Testes de homogeneidade de vari‚ncias (Levene e Fligner-Killeen)
-leveneTest(`Valor Total do Item` ~ `ForÁa Singular`, data = fornecedor)
-fligner.test(`Valor Total do Item` ~ `ForÁa Singular`, data = fornecedor)
+#Testes de homogeneidade de vari√¢ncias (Levene e Fligner-Killeen)
+leveneTest(`Valor Total do Item` ~ `For√ßa Singular`, data = fornecedor)
+fligner.test(`Valor Total do Item` ~ `For√ßa Singular`, data = fornecedor)
 
 ## Visualizando e identificando outliers (itens, fonecedores e uasgs)
 
 fornecedor %>% 
-  ggbetweenstats(x = `ForÁa Singular`,
+  ggbetweenstats(x = `For√ßa Singular`,
                  y = `Valor Total do Item`,
                  type = "np", 
                  outlier.tagging = TRUE,
-                 outlier.label = `DescriÁ„o do Item`,
-                 title = "DistribuiÁ„o do valor das compras por ForÁa Singular")
+                 outlier.label = `Descri√ß√£o do Item`,
+                 title = "Distribui√ß√£o do valor das compras por For√ßa Singular",
+                 caption = "Fonte: Observat√≥rio do Minist√©rio da Defesa (https://observatoriomd.irid.ufrj.br)")
 
 fornecedor %>% 
-  ggbetweenstats(x = `ForÁa Singular`,
+  ggbetweenstats(x = `For√ßa Singular`,
                  y = `Valor Total do Item`,
                  type = "np", 
                  outlier.tagging = TRUE,
-                 outlier.label = `Raz„o Social`,
-                 title = "DistribuiÁ„o do valor das compras por ForÁa Singular")
+                 outlier.label = `Raz√£o Social`,
+                 title = "Distribui√ß√£o do valor das compras por For√ßa Singular",
+                 caption = "Fonte: Observat√≥rio do Minist√©rio da Defesa (https://observatoriomd.irid.ufrj.br)")
 
 uasg %>% 
-  ggbetweenstats(x = `ForÁa Singular`,
+  ggbetweenstats(x = `For√ßa Singular`,
                  y = `Valor Total da Compra`,
                  type = "np", 
                  outlier.tagging = TRUE,
                  outlier.label = `Nome da UASG`,
-                 title = "DistribuiÁ„o do valor das compras por ForÁa Singular")
+                 title = "Distribui√ß√£o do valor das compras por For√ßa Singular",
+                 caption = "Fonte: Observat√≥rio do Minist√©rio da Defesa (https://observatoriomd.irid.ufrj.br)")
 
-## Para enxergar melhor as distribuiÁıes, vamos reduzir ao percentil 90
+## Para enxergar melhor as distribui√ß√µes, vamos reduzir ao percentil 90
 
 quantile(fornecedor$`Valor Total do Item`, probs = 0.90)
 
 fornecedor %>% 
   filter(`Valor Total do Item` < 25270) %>% 
-  ggbetweenstats(x = `ForÁa Singular`,
+  ggbetweenstats(x = `For√ßa Singular`,
                  y = `Valor Total do Item`,
                  type = "np", 
                  outlier.tagging = TRUE,
-                 outlier.label = `DescriÁ„o do Item`,
-                 title = "DistribuiÁ„o do valor das compras por ForÁa Singular (percentil 90)")
+                 outlier.label = `Descri√ß√£o do Item`,
+                 title = "Distribui√ß√£o do valor das compras por For√ßa Singular (percentil 90)",
+                 caption = "Fonte: Observat√≥rio do Minist√©rio da Defesa (https://observatoriomd.irid.ufrj.br)")
 
-#Embora o ExÈrcito tenha gastado mais no total, FAB e Marinha tiveram gastos unit·rios maiores por compra, principalmente a FAB.
+#Embora o Ex√©rcito tenha gastado mais no total, FAB e Marinha tiveram gastos unit√°rios maiores por compra, principalmente a FAB.
 
 ##############################################################################################
 ##### Quais foram os itens mais adquiridos e quais representaram os maiores gastos? ##########
@@ -221,76 +226,76 @@ fornecedor %>%
 
 #Itens mais adquiridos
 fornecedor %>%
-  filter(`ForÁa Singular` == "ExÈrcito Brasileiro") %>% 
-  count(`DescriÁ„o do Item`) %>% 
+  filter(`For√ßa Singular` == "Ex√©rcito Brasileiro") %>% 
+  count(`Descri√ß√£o do Item`) %>% 
   arrange(-n) %>% 
   slice_max(n, n = 15) %>% 
-  mutate(`DescriÁ„o do Item` = fct_reorder(`DescriÁ„o do Item`, n, .desc = TRUE)) %>%
-  ggplot(aes(`DescriÁ„o do Item`, n)) +
+  mutate(`Descri√ß√£o do Item` = fct_reorder(`Descri√ß√£o do Item`, n, .desc = TRUE)) %>%
+  ggplot(aes(`Descri√ß√£o do Item`, n)) +
   geom_bar(stat="identity", width=0.5, fill = c("darkgreen")) +
   scale_x_discrete(labels = label_wrap(width = 5))  +
-  labs(title = "Itens mais adquiridos pelo ExÈrcito Brasileiro",
-       subtitle = "¡lcool etÌlico e luvas de cirurgia foram os itens mais adquiridos pelo EB",
+  labs(title = "Itens mais adquiridos pelo Ex√©rcito Brasileiro",
+       subtitle = "√Ålcool et√≠lico e luvas de cirurgia foram os itens mais adquiridos pelo EB",
        x = "",
        y = "Compras realizadas",
-       caption = "") +
+       caption = "Fonte: Observat√≥rio do Minist√©rio da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_classic() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
   theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5))
 
 #Itens que representaram os maiores gastos
 fornecedor %>%
-  filter(`ForÁa Singular` == "ExÈrcito Brasileiro") %>% 
-  group_by(`DescriÁ„o do Item`) %>% 
+  filter(`For√ßa Singular` == "Ex√©rcito Brasileiro") %>% 
+  group_by(`Descri√ß√£o do Item`) %>% 
   summarise(Total = sum(`Valor Total do Item`)) %>% 
   arrange(-Total) %>% 
   slice_max(Total, n = 15) %>% 
-  mutate(`DescriÁ„o do Item` = fct_reorder(`DescriÁ„o do Item`, Total, .desc = TRUE)) %>%
-  ggplot(aes(`DescriÁ„o do Item`, Total)) +
+  mutate(`Descri√ß√£o do Item` = fct_reorder(`Descri√ß√£o do Item`, Total, .desc = TRUE)) %>%
+  ggplot(aes(`Descri√ß√£o do Item`, Total)) +
   geom_bar(stat="identity", width=0.5, fill = c("darkgreen")) +
   scale_y_continuous(labels = label_dollar(prefix = "R$")) +
   scale_x_discrete(labels = label_wrap(width = 5))  +
-  labs(title = "Total de despesas por item adquirido pelo ExÈrcito Brasileiro",
-       subtitle = "LocaÁ„o de bens mÛveis representou o maior gasto do EB",
+  labs(title = "Total de despesas por item adquirido pelo Ex√©rcito Brasileiro",
+       subtitle = "Loca√ß√£o de bens m√≥veis representou o maior gasto do EB",
        x = "",
        y = "Custo total do item",
-       caption = "") +
+       caption = "Fonte: Observat√≥rio do Minist√©rio da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_classic() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
   theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5))
 
-#Embora os itens mais adquiridos pelo EB tenham sido ·lcool e luvas de cirurgia, locaÁ„o de bens mÛveis representou os maiores gastos da ForÁa.
+#Embora os itens mais adquiridos pelo EB tenham sido √°lcool e luvas de cirurgia, loca√ß√£o de bens m√≥veis representou os maiores gastos da For√ßa.
 
 ## MB
 
 #Itens mais adquiridos
 fornecedor %>%
-  filter(`ForÁa Singular` == "Marinha do Brasil") %>% 
-  count(`DescriÁ„o do Item`) %>% 
+  filter(`For√ßa Singular` == "Marinha do Brasil") %>% 
+  count(`Descri√ß√£o do Item`) %>% 
   arrange(-n) %>% 
   slice_max(n, n = 15) %>% 
-  mutate(`DescriÁ„o do Item` = fct_reorder(`DescriÁ„o do Item`, n, .desc = TRUE)) %>%
-  ggplot(aes(`DescriÁ„o do Item`, n)) +
+  mutate(`Descri√ß√£o do Item` = fct_reorder(`Descri√ß√£o do Item`, n, .desc = TRUE)) %>%
+  ggplot(aes(`Descri√ß√£o do Item`, n)) +
   geom_bar(stat="identity", width=0.5, fill = c("darkred")) +
   scale_x_discrete(labels = label_wrap(width = 5))  +
   labs(title = "Itens mais adquiridos pela Marinha do Brasil",
-       subtitle = "ManutenÁ„o e reparo de embarcaÁıes foi o serviÁo mais adquirido pela MB",
+       subtitle = "Manuten√ß√£o e reparo de embarca√ß√µes foi o servi√ßo mais adquirido pela MB",
        x = "",
        y = "Compras realizadas",
-       caption = "") +
+       caption = "Fonte: Observat√≥rio do Minist√©rio da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_classic() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
   theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5))
 
 # Itens que representaram os maiores gastos
 fornecedor %>%
-  filter(`ForÁa Singular` == "Marinha do Brasil") %>% 
-  group_by(`DescriÁ„o do Item`) %>% 
+  filter(`For√ßa Singular` == "Marinha do Brasil") %>% 
+  group_by(`Descri√ß√£o do Item`) %>% 
   summarise(Total = sum(`Valor Total do Item`)) %>% 
   arrange(-Total) %>% 
   slice_max(Total, n = 15) %>% 
-  mutate(`DescriÁ„o do Item` = fct_reorder(`DescriÁ„o do Item`, Total, .desc = TRUE)) %>%
-  ggplot(aes(`DescriÁ„o do Item`, Total)) +
+  mutate(`Descri√ß√£o do Item` = fct_reorder(`Descri√ß√£o do Item`, Total, .desc = TRUE)) %>%
+  ggplot(aes(`Descri√ß√£o do Item`, Total)) +
   geom_bar(stat="identity", width=0.5, fill = c("darkred")) +
   scale_y_continuous(labels = label_dollar(prefix = "R$")) +
   scale_x_discrete(labels = label_wrap(width = 5))  +
@@ -298,56 +303,282 @@ fornecedor %>%
        subtitle = "Aventais e reagentes representaram o maior gasto da MB",
        x = "",
        y = "Custo total do item",
-       caption = "") +
+       caption = "Fonte: Observat√≥rio do Minist√©rio da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_classic() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
   theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5))
 
-#Embora manutenÁ„o e reparo de embarcaÁıes tenham sido os serviÁos mais adquiridos pela MB, aventais e reagentes representaram os maiores gastos da ForÁa.
+#Embora manuten√ß√£o e reparo de embarca√ß√µes tenham sido os servi√ßos mais adquiridos pela MB, aventais e reagentes representaram os maiores gastos da For√ßa.
 
 ## FAB
 
 #Itens mais adquiridos
 fornecedor %>%
-  filter(`ForÁa Singular` == "ForÁa AÈrea Brasileira") %>% 
-  count(`DescriÁ„o do Item`) %>% 
+  filter(`For√ßa Singular` == "For√ßa A√©rea Brasileira") %>% 
+  count(`Descri√ß√£o do Item`) %>% 
   arrange(-n) %>% 
   slice_max(n, n = 15) %>% 
-  mutate(`DescriÁ„o do Item` = fct_reorder(`DescriÁ„o do Item`, n, .desc = TRUE)) %>%
-  ggplot(aes(`DescriÁ„o do Item`, n)) +
+  mutate(`Descri√ß√£o do Item` = fct_reorder(`Descri√ß√£o do Item`, n, .desc = TRUE)) %>%
+  ggplot(aes(`Descri√ß√£o do Item`, n)) +
   geom_bar(stat="identity", width=0.5, fill = c("darkblue")) +
   scale_x_discrete(labels = label_wrap(width = 5))  +
-  labs(title = "Itens mais adquiridos pela ForÁa AÈrea Brasileira",
-       subtitle = "¡lcool etÌlico foi o item mais adquirido pela FAB",
+  labs(title = "Itens mais adquiridos pela For√ßa A√©rea Brasileira",
+       subtitle = "√Ålcool et√≠lico foi o item mais adquirido pela FAB",
        x = "",
        y = "Compras realizadas",
-       caption = "") +
+       caption = "Fonte: Observat√≥rio do Minist√©rio da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_classic() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
   theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5))
 
 #Itens que representaram os maiores gastos
 fornecedor %>%
-  filter(`ForÁa Singular` == "ForÁa AÈrea Brasileira") %>% 
-  group_by(`DescriÁ„o do Item`) %>% 
+  filter(`For√ßa Singular` == "For√ßa A√©rea Brasileira") %>% 
+  group_by(`Descri√ß√£o do Item`) %>% 
   summarise(Total = sum(`Valor Total do Item`)) %>% 
   arrange(-Total) %>% 
   slice_max(Total, n = 15) %>% 
-  mutate(`DescriÁ„o do Item` = fct_reorder(`DescriÁ„o do Item`, Total, .desc = TRUE)) %>%
-  ggplot(aes(`DescriÁ„o do Item`, Total)) +
+  mutate(`Descri√ß√£o do Item` = fct_reorder(`Descri√ß√£o do Item`, Total, .desc = TRUE)) %>%
+  ggplot(aes(`Descri√ß√£o do Item`, Total)) +
   geom_bar(stat="identity", width=0.5, fill = c("darkblue")) +
   scale_y_continuous(labels = label_dollar(prefix = "R$")) +
   scale_x_discrete(labels = label_wrap(width = 5))  +
-  labs(title = "Total de despesas por item adquirido pela ForÁa AÈrea Brasileira",
-       subtitle = "ServiÁos de engenharia representaram o maior gasto da FAB",
+  labs(title = "Total de despesas por item adquirido pela For√ßa A√©rea Brasileira",
+       subtitle = "Servi√ßos de engenharia representaram o maior gasto da FAB",
        x = "",
        y = "Custo total do item",
-       caption = "") +
+       caption = "Fonte: Observat√≥rio do Minist√©rio da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_classic() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
   theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5))
 
-#Embora o item mais adquirido pela FAB tenha sido ·lcool etÌlico, serviÁos de engenharia representaram o maior gasto da ForÁa.
+#Embora o item mais adquirido pela FAB tenha sido √°lcool et√≠lico, servi√ßos de engenharia representaram o maior gasto da For√ßa.
+
+
+##################################################################################################
+##### O quanto foi gasto com Cloroquina em compara√ß√£o a outros medicamentos utilizados? ##########
+##################################################################################################
+
+###################### Cloroquina/Hidroxicloroquina, Azitromicina e Ivermectina ####################
+
+#Gastos com cada item do protocolo
+fornecedor %>%
+  filter(grepl('CLOROQUINA', `Descri√ß√£o do Item`)) %>%   
+  group_by(`Descri√ß√£o do Item`) %>% 
+  summarise(Total = sum(`Valor Total do Item`)) %>% 
+  arrange(-Total)
+
+#Gastos totais
+fornecedor %>%
+  filter(grepl('CLOROQUINA', `Descri√ß√£o do Item`)) %>%   
+  group_by(`Descri√ß√£o do Item`) %>% 
+  summarise(Total = sum(`Valor Total do Item`)) %>% 
+  arrange(-Total) %>% 
+  summarise(Total = sum(Total))
+
+####################################### Antibi√≥ticos #################################
+
+fornecedor %>%
+  filter(grepl('AMOXICILINA|CLAVULANATO|CEFTRIAXONE|PIPERACILINA|MEROPENEM|AZITROMICINA', `Descri√ß√£o do Item`)) %>%   
+  group_by(`Descri√ß√£o do Item`) %>% 
+  summarise(Total = sum(`Valor Total do Item`)) %>% 
+  arrange(-Total)
+
+#Gastos totais
+fornecedor %>%
+  filter(grepl('AMOXICILINA|CLAVULANATO|CEFTRIAXONE|PIPERACILINA|MEROPENEM|AZITROMICINA', `Descri√ß√£o do Item`)) %>%   
+  group_by(`Descri√ß√£o do Item`) %>% 
+  summarise(Total = sum(`Valor Total do Item`)) %>% 
+  arrange(-Total) %>% 
+  summarise(Total = sum(Total))
+
+#Gr√°fico comparativo
+antibi√≥ticos <- fornecedor %>%
+  filter(grepl('CLOROQUINA|AMOXICILINA|CLAVULANATO|CEFTRIAXONE|PIPERACILINA|MEROPENEM|AZITROMICINA', `Descri√ß√£o do Item`)) %>%   
+  group_by(`Descri√ß√£o do Item`) %>% 
+  summarise(Total = sum(`Valor Total do Item`)) %>% 
+  arrange(-Total) %>% 
+  mutate(`Descri√ß√£o do Item` = fct_reorder(`Descri√ß√£o do Item`, Total, .desc = FALSE)) %>%
+  ggplot(aes(`Descri√ß√£o do Item`, Total, fill = factor(ifelse(`Descri√ß√£o do Item`%in% c("CLOROQUINA"), 
+                                                              "Cloroquina: R$ 1.431.869,00", 
+                                                              "Antibi√≥ticos: R$ 171.636,00")))) +
+  geom_bar(stat="identity", width=0.5) +
+  scale_y_continuous(labels = label_dollar(prefix = "R$")) +
+  scale_x_discrete(labels = label_wrap(width = 5))  +
+  scale_fill_manual(name = "", values = c("darkgray", "#32cd32")) +
+  labs(title = "Antibi√≥ticos",
+       x = "") +
+  theme_classic() +
+  theme(plot.title=element_text(color = "black", size=20, hjust=0.5, face = "bold")) +
+  theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5)) +
+  theme(legend.position = c(0.6, 0.2),
+        legend.text = element_text(face = "bold", size = 14),
+        axis.title.x=element_blank()) +
+  coord_flip()
+
+####################################### Sedativos #################################
+
+fornecedor %>%
+  filter(grepl('MIDAZOLAM|FENTANIL|PROPOFOL|KETAMINA|LIDOCA√çNA|ROCUR√îNIO|ATRAC√öRIO|SUCCINILCOLINA|SUGAMADEX|ETOMIDATO|DEXMEDETOMIDINA', `Descri√ß√£o do Item`)) %>%   
+  group_by(`Descri√ß√£o do Item`) %>% 
+  summarise(Total = sum(`Valor Total do Item`)) %>% 
+  arrange(-Total)
+
+#Gastos totais
+fornecedor %>%
+  filter(grepl('MIDAZOLAM|FENTANIL|PROPOFOL|KETAMINA|LIDOCA√çNA|ROCUR√îNIO|ATRAC√öRIO|SUCCINILCOLINA|SUGAMADEX|ETOMIDATO|DEXMEDETOMIDINA', `Descri√ß√£o do Item`)) %>%   
+  group_by(`Descri√ß√£o do Item`) %>% 
+  summarise(Total = sum(`Valor Total do Item`)) %>% 
+  arrange(-Total) %>% 
+  summarise(Total = sum(Total))
+
+#Gr√°fico comparativo
+sedativos <- fornecedor %>%
+  filter(grepl('CLOROQUINA|MIDAZOLAM|FENTANIL|PROPOFOL|KETAMINA|LIDOCA√çNA|ROCUR√îNIO|ATRAC√öRIO|SUCCINILCOLINA|SUGAMADEX|ETOMIDATO|DEXMEDETOMIDINA', `Descri√ß√£o do Item`)) %>%   
+  group_by(`Descri√ß√£o do Item`) %>% 
+  summarise(Total = sum(`Valor Total do Item`)) %>% 
+  arrange(-Total) %>% 
+  mutate(`Descri√ß√£o do Item` = fct_reorder(`Descri√ß√£o do Item`, Total, .desc = FALSE)) %>%
+  ggplot(aes(`Descri√ß√£o do Item`, Total, fill = factor(ifelse(`Descri√ß√£o do Item`%in% c("CLOROQUINA"), 
+                                                              "Cloroquina: R$ 1.431.869,00", 
+                                                              "Sedativos: R$ 3.947.818")))) +
+  geom_bar(stat="identity", width=0.5) +
+  scale_y_continuous(labels = label_dollar(prefix = "R$")) +
+  scale_x_discrete(labels = label_wrap(width = 5))  +
+  scale_fill_manual(name = "", values = c("#32cd32", "darkgray")) +
+  labs(title = "Sedativos",
+       x = "") +
+  theme_classic() +
+  theme(plot.title=element_text(color = "black", size=20, hjust=0.5, face = "bold")) +
+  theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5)) +
+  theme(legend.position = c(0.6, 0.2),
+        legend.text = element_text(face = "bold", size = 14),
+        axis.title.x=element_blank()) +
+  coord_flip()
+
+####################################### Anticoagulantes #################################
+
+fornecedor %>%
+  filter(grepl('ENOXAPARINA|CLEXANE|HEPERINA|VARFARINA|ELIQUIS|PRADAZA|XARELTO', `Descri√ß√£o do Item`)) %>%   
+  group_by(`Descri√ß√£o do Item`) %>% 
+  summarise(Total = sum(`Valor Total do Item`)) %>% 
+  arrange(-Total)
+
+#Gastos totais
+fornecedor %>%
+  filter(grepl('ENOXAPARINA|CLEXANE|HEPERINA|VARFARINA|ELIQUIS|PRADAZA|XARELTO', `Descri√ß√£o do Item`)) %>%   
+  group_by(`Descri√ß√£o do Item`) %>% 
+  summarise(Total = sum(`Valor Total do Item`)) %>% 
+  arrange(-Total) %>% 
+  summarise(Total = sum(Total))
+
+#Gr√°fico comparativo
+anticoagulantes <- fornecedor %>%
+  filter(grepl('CLOROQUINA|ENOXAPARINA|CLEXANE|HEPERINA|VARFARINA|ELIQUIS|PRADAZA|XARELTO', `Descri√ß√£o do Item`)) %>%   
+  group_by(`Descri√ß√£o do Item`) %>% 
+  summarise(Total = sum(`Valor Total do Item`)) %>% 
+  arrange(-Total) %>% 
+  mutate(`Descri√ß√£o do Item` = fct_reorder(`Descri√ß√£o do Item`, Total, .desc = FALSE)) %>%
+  ggplot(aes(`Descri√ß√£o do Item`, Total, fill = factor(ifelse(`Descri√ß√£o do Item`%in% c("CLOROQUINA"), 
+                                                              "Cloroquina: R$ 1.431.869,00", 
+                                                              "Anticoagulantes: R$ 883.832,00")))) +
+  geom_bar(stat="identity", width=0.5) +
+  scale_y_continuous(labels = label_dollar(prefix = "R$")) +
+  scale_x_discrete(labels = label_wrap(width = 5))  +
+  scale_fill_manual(name = "", values = c("darkgray", "#32cd32")) +
+  labs(title = "Anticoagulantes",
+       x = "") +
+  theme_classic() +
+  theme(plot.title=element_text(color = "black", size=20, hjust=0.5, face = "bold")) +
+  theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5)) +
+  theme(legend.position = c(0.6, 0.2),
+        legend.text = element_text(face = "bold", size = 14),
+        axis.title.x=element_blank()) +
+  coord_flip()
+
+####################################### Corticoides #################################
+
+fornecedor %>%
+  filter(grepl('DEXAMETASONA|PREDNISONA|CORTISONA|PREDNISOLONA', `Descri√ß√£o do Item`)) %>%   
+  group_by(`Descri√ß√£o do Item`) %>% 
+  summarise(Total = sum(`Valor Total do Item`)) %>% 
+  arrange(-Total)
+
+#Gastos totais
+fornecedor %>%
+  filter(grepl('DEXAMETASONA|PREDNISONA|CORTISONA|PREDNISOLONA', `Descri√ß√£o do Item`)) %>%   
+  group_by(`Descri√ß√£o do Item`) %>% 
+  summarise(Total = sum(`Valor Total do Item`)) %>% 
+  arrange(-Total) %>% 
+  summarise(Total = sum(Total))
+
+#Gr√°fico comparativo
+cortic√≥ides <- fornecedor %>%
+  filter(grepl('CLOROQUINA|DEXAMETASONA|PREDNISONA|CORTISONA|PREDNISOLONA', `Descri√ß√£o do Item`)) %>%   
+  group_by(`Descri√ß√£o do Item`) %>% 
+  summarise(Total = sum(`Valor Total do Item`)) %>% 
+  arrange(-Total) %>% 
+  mutate(`Descri√ß√£o do Item` = fct_reorder(`Descri√ß√£o do Item`, Total, .desc = FALSE)) %>%
+  ggplot(aes(`Descri√ß√£o do Item`, Total, fill = factor(ifelse(`Descri√ß√£o do Item`%in% c("CLOROQUINA"), 
+                                                              "Cloroquina: R$ 1.431.869,00", 
+                                                              "Cortic√≥ides: R$ 27.640,00")))) +
+  geom_bar(stat="identity", width=0.5) +
+  scale_y_continuous(labels = label_dollar(prefix = "R$")) +
+  scale_x_discrete(labels = label_wrap(width = 5))  +
+  scale_fill_manual(name = "", values = c("#32cd32", "darkgray")) +
+  labs(title = "Cortic√≥ides",
+       x = "") +
+  theme_classic() +
+  theme(plot.title=element_text(color = "black", size=20, hjust=0.5, face = "bold")) +
+  theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5)) +
+  theme(legend.position = c(0.6, 0.2),
+        legend.text = element_text(face = "bold", size = 14),
+        axis.title.x=element_blank()) +
+  coord_flip()
+
+####################################### Oxig√™nio #################################
+
+fornecedor %>%
+  filter(grepl('OXIG√äNIO', `Descri√ß√£o do Item`)) %>%   
+  group_by(`Descri√ß√£o do Item`) %>% 
+  summarise(Total = sum(`Valor Total do Item`)) %>% 
+  arrange(-Total)
+
+#Gastos totais
+fornecedor %>%
+  filter(grepl('OXIG√äNIO', `Descri√ß√£o do Item`)) %>%   
+  group_by(`Descri√ß√£o do Item`) %>% 
+  summarise(Total = sum(`Valor Total do Item`)) %>% 
+  arrange(-Total) %>% 
+  summarise(Total = sum(Total))
+
+#Gr√°fico comparativo
+oxig√™nio <- fornecedor %>%
+  filter(grepl('CLOROQUINA|OXIG√äNIO', `Descri√ß√£o do Item`)) %>%   
+  group_by(`Descri√ß√£o do Item`) %>% 
+  summarise(Total = sum(`Valor Total do Item`)) %>% 
+  arrange(-Total) %>% 
+  mutate(`Descri√ß√£o do Item` = fct_reorder(`Descri√ß√£o do Item`, Total, .desc = FALSE)) %>%
+  ggplot(aes(`Descri√ß√£o do Item`, Total, fill = factor(ifelse(`Descri√ß√£o do Item`%in% c("CLOROQUINA"), 
+                                                              "Cloroquina: R$ 1.431.869,00", 
+                                                              "Oxig√™nio: R$ 391.431,00")))) +
+  geom_bar(stat="identity", width=0.5) +
+  scale_y_continuous(labels = label_dollar(prefix = "R$")) +
+  scale_x_discrete(labels = label_wrap(width = 5))  +
+  scale_fill_manual(name = "", values = c("#32cd32", "darkgray")) +
+  labs(title = "Oxig√™nio",
+       x = "") +
+  theme_classic() +
+  theme(plot.title=element_text(color = "black", size=20, hjust=0.5, face = "bold")) +
+  theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5)) +
+  theme(legend.position = c(0.6, 0.2),
+        legend.text = element_text(face = "bold", size = 14),
+        axis.title.x=element_blank()) +
+  coord_flip()
+
+##################### Combina todos #####################
+
+ggarrange(antibi√≥ticos, anticoagulantes, cortic√≥ides, oxig√™nio, sedativos)
 
 #########################################################################################################
 ##### Quais foram os fornecedores mais contratados e quais representaram os maiores contratos? ##########
@@ -357,76 +588,76 @@ fornecedor %>%
 
 #Fornecedores mais contratados
 fornecedor %>%
-  filter(`ForÁa Singular` == "ExÈrcito Brasileiro") %>% 
-  count(`Raz„o Social`) %>% 
+  filter(`For√ßa Singular` == "Ex√©rcito Brasileiro") %>% 
+  count(`Raz√£o Social`) %>% 
   arrange(-n) %>% 
   slice_max(n, n = 15) %>% 
-  mutate(`Raz„o Social` = fct_reorder(`Raz„o Social`, n, .desc = TRUE)) %>%
-  ggplot(aes(`Raz„o Social`, n)) +
+  mutate(`Raz√£o Social` = fct_reorder(`Raz√£o Social`, n, .desc = TRUE)) %>%
+  ggplot(aes(`Raz√£o Social`, n)) +
   geom_bar(stat="identity", width=0.5, fill = c("darkgreen")) +
   scale_x_discrete(labels = label_wrap(width = 5))  +
-  labs(title = "Fornecedores mais contratados pelo ExÈrcito Brasileiro",
-       subtitle = "Fabiana Aguiar da Costa da Silva e ¡gora ProduÁ„o de Eventos foram os fornecedores mais contratados pelo EB",
+  labs(title = "Fornecedores mais contratados pelo Ex√©rcito Brasileiro",
+       subtitle = "Fabiana Aguiar da Costa da Silva e √Ågora Produ√ß√£o de Eventos foram os fornecedores mais contratados pelo EB",
        x = "",
        y = "Contratos realizados",
-       caption = "") +
+       caption = "Fonte: Observat√≥rio do Minist√©rio da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_classic() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
   theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5))
 
 #Fornecedores que representaram os maiores gastos
 fornecedor %>%
-  filter(`ForÁa Singular` == "ExÈrcito Brasileiro") %>% 
-  group_by(`Raz„o Social`) %>% 
+  filter(`For√ßa Singular` == "Ex√©rcito Brasileiro") %>% 
+  group_by(`Raz√£o Social`) %>% 
   summarise(Total = sum(`Valor Total do Item`)) %>% 
   arrange(-Total) %>% 
   slice_max(Total, n = 15) %>% 
-  mutate(`Raz„o Social` = fct_reorder(`Raz„o Social`, Total, .desc = TRUE)) %>%
-  ggplot(aes(`Raz„o Social`, Total)) +
+  mutate(`Raz√£o Social` = fct_reorder(`Raz√£o Social`, Total, .desc = TRUE)) %>%
+  ggplot(aes(`Raz√£o Social`, Total)) +
   geom_bar(stat="identity", width=0.5, fill = c("darkgreen")) +
   scale_y_continuous(labels = label_dollar(prefix = "R$")) +
   scale_x_discrete(labels = label_wrap(width = 5))  +
-  labs(title = "Fornecedores que representaram os maiores contratos com o ExÈrcito Brasileiro",
-       subtitle = "A empresa ¡gora ProduÁ„o de Eventos representou os maiores contratos com o EB",
+  labs(title = "Fornecedores que representaram os maiores contratos com o Ex√©rcito Brasileiro",
+       subtitle = "A empresa √Ågora Produ√ß√£o de Eventos representou os maiores contratos com o EB",
        x = "",
        y = "Valor total contratado",
-       caption = "") +
+       caption = "Fonte: Observat√≥rio do Minist√©rio da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_classic() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
   theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5))
 
-#Fabiana Aguiar da Costa da Silva realizou o maior n˙mero de contratos com o EB, seguida da empresa ¡gora ProduÁ„o de Eventos. Essa ˙ltima, entretanto, foi a que obteve contratos com os maiores valores.
+#Fabiana Aguiar da Costa da Silva realizou o maior n√∫mero de contratos com o EB, seguida da empresa √Ågora Produ√ß√£o de Eventos. Essa √∫ltima, entretanto, foi a que obteve contratos com os maiores valores.
 
 ## MB
 
 #Fornecedores mais contratados
 fornecedor %>%
-  filter(`ForÁa Singular` == "Marinha do Brasil") %>% 
-  count(`Raz„o Social`) %>% 
+  filter(`For√ßa Singular` == "Marinha do Brasil") %>% 
+  count(`Raz√£o Social`) %>% 
   arrange(-n) %>% 
   slice_max(n, n = 15) %>% 
-  mutate(`Raz„o Social` = fct_reorder(`Raz„o Social`, n, .desc = TRUE)) %>%
-  ggplot(aes(`Raz„o Social`, n)) +
+  mutate(`Raz√£o Social` = fct_reorder(`Raz√£o Social`, n, .desc = TRUE)) %>%
+  ggplot(aes(`Raz√£o Social`, n)) +
   geom_bar(stat="identity", width=0.5, fill = c("darkred")) +
   scale_x_discrete(labels = label_wrap(width = 5))  +
   labs(title = "Fornecedores mais contratados pela Marinha do Brasil",
        subtitle = "A empresa Medisil foi o fornecedor mais contratado pela MB",
        x = "",
        y = "Contratos realizados",
-       caption = "") +
+       caption = "Fonte: Observat√≥rio do Minist√©rio da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_classic() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
   theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5))
 
 #Fornecedores que representaram os maiores gastos
 fornecedor %>%
-  filter(`ForÁa Singular` == "Marinha do Brasil") %>% 
-  group_by(`Raz„o Social`) %>% 
+  filter(`For√ßa Singular` == "Marinha do Brasil") %>% 
+  group_by(`Raz√£o Social`) %>% 
   summarise(Total = sum(`Valor Total do Item`)) %>% 
   arrange(-Total) %>% 
   slice_max(Total, n = 15) %>% 
-  mutate(`Raz„o Social` = fct_reorder(`Raz„o Social`, Total, .desc = TRUE)) %>%
-  ggplot(aes(`Raz„o Social`, Total)) +
+  mutate(`Raz√£o Social` = fct_reorder(`Raz√£o Social`, Total, .desc = TRUE)) %>%
+  ggplot(aes(`Raz√£o Social`, Total)) +
   geom_bar(stat="identity", width=0.5, fill = c("darkred")) +
   scale_y_continuous(labels = label_dollar(prefix = "R$")) +
   scale_x_discrete(labels = label_wrap(width = 5))  +
@@ -434,56 +665,56 @@ fornecedor %>%
        subtitle = "A empresa Lang e Filhos representou os maiores contratos com a MB",
        x = "",
        y = "Valor total contratado",
-       caption = "") +
+       caption = "Fonte: Observat√≥rio do Minist√©rio da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_classic() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
   theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5))
 
-#Embora a empresa Medisil tenha sido o fornecedor que mais realizou contratos com a MB, a empresa Lang e Filho foi respons·vel pelos maiores valores em contratos.
+#Embora a empresa Medisil tenha sido o fornecedor que mais realizou contratos com a MB, a empresa Lang e Filho foi respons√°vel pelos maiores valores em contratos.
 
 ## FAB
 
 #Fornecedores mais contratados
 fornecedor %>%
-  filter(`ForÁa Singular` == "ForÁa AÈrea Brasileira") %>% 
-  count(`Raz„o Social`) %>% 
+  filter(`For√ßa Singular` == "For√ßa A√©rea Brasileira") %>% 
+  count(`Raz√£o Social`) %>% 
   arrange(-n) %>% 
   slice_max(n, n = 15) %>% 
-  mutate(`Raz„o Social` = fct_reorder(`Raz„o Social`, n, .desc = TRUE)) %>%
-  ggplot(aes(`Raz„o Social`, n)) +
+  mutate(`Raz√£o Social` = fct_reorder(`Raz√£o Social`, n, .desc = TRUE)) %>%
+  ggplot(aes(`Raz√£o Social`, n)) +
   geom_bar(stat="identity", width=0.5, fill = c("darkblue")) +
   scale_x_discrete(labels = label_wrap(width = 5))  +
-  labs(title = "Fornecedores mais contratados pela ForÁa AÈrea Brasileira",
+  labs(title = "Fornecedores mais contratados pela For√ßa A√©rea Brasileira",
        subtitle = "A empresa Vila Gugua Carnes foi o fornecedor mais contratado pela FAB",
        x = "",
        y = "Contratos realizados",
-       caption = "") +
+       caption = "Fonte: Observat√≥rio do Minist√©rio da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_classic() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
   theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5))
 
 #Fornecedores que representaram os maiores gastos
 fornecedor %>%
-  filter(`ForÁa Singular` == "ForÁa AÈrea Brasileira") %>% 
-  group_by(`Raz„o Social`) %>% 
+  filter(`For√ßa Singular` == "For√ßa A√©rea Brasileira") %>% 
+  group_by(`Raz√£o Social`) %>% 
   summarise(Total = sum(`Valor Total do Item`)) %>% 
   arrange(-Total) %>% 
   slice_max(Total, n = 15) %>% 
-  mutate(`Raz„o Social` = fct_reorder(`Raz„o Social`, Total, .desc = TRUE)) %>%
-  ggplot(aes(`Raz„o Social`, Total)) +
+  mutate(`Raz√£o Social` = fct_reorder(`Raz√£o Social`, Total, .desc = TRUE)) %>%
+  ggplot(aes(`Raz√£o Social`, Total)) +
   geom_bar(stat="identity", width=0.5, fill = c("darkblue")) +
   scale_y_continuous(labels = label_dollar(prefix = "R$")) +
   scale_x_discrete(labels = label_wrap(width = 5))  +
-  labs(title = "Fornecedores que representaram os maiores contratos com a ForÁa AÈrea Brasileira",
-       subtitle = "A empresa Ac·cia ConstruÁıes e ServiÁos representou os maiores contratos com a FAB",
+  labs(title = "Fornecedores que representaram os maiores contratos com a For√ßa A√©rea Brasileira",
+       subtitle = "A empresa Ac√°cia Constru√ß√µes e Servi√ßos representou os maiores contratos com a FAB",
        x = "",
        y = "Valor total contratado",
-       caption = "") +
+       caption = "Fonte: Observat√≥rio do Minist√©rio da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_classic() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
   theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5))
 
-#Embora a empresa Vila Gugu Carnes tenha sido o fornecedor que mais realizou contratos com a FAB, a empresa Ac·cia ConstruÁıes e ServiÁos foi respons·vel pelos maiores valores em contratos.
+#Embora a empresa Vila Gugu Carnes tenha sido o fornecedor que mais realizou contratos com a FAB, a empresa Ac√°cia Constru√ß√µes e Servi√ßos foi respons√°vel pelos maiores valores em contratos.
 
 #########################################################################################################
 ##### Quais uasgs realizaram mais compras e quais tiveram maiores despesas totais? ######################
@@ -493,7 +724,7 @@ fornecedor %>%
 
 #uasgs que realizaram mais compras
 uasg %>%
-  filter(`ForÁa Singular` == "ExÈrcito Brasileiro") %>% 
+  filter(`For√ßa Singular` == "Ex√©rcito Brasileiro") %>% 
   count(`Nome da UASG`) %>% 
   arrange(-n) %>% 
   slice_max(n, n = 15) %>% 
@@ -501,18 +732,18 @@ uasg %>%
   ggplot(aes(`Nome da UASG`, n)) +
   geom_bar(stat="identity", width=0.5, fill = c("darkgreen")) +
   scale_x_discrete(labels = label_wrap(width = 5))  +
-  labs(title = "Unidades do ExÈrcito Brasileiro que realizaram mais compras",
-       subtitle = "Os Hospitais Militares de S„o Paulo e de Porto Alegre foram as unidades que mais realizaram compras no EB",
+  labs(title = "Unidades do Ex√©rcito Brasileiro que realizaram mais compras",
+       subtitle = "Os Hospitais Militares de S√£o Paulo e de Porto Alegre foram as unidades que mais realizaram compras no EB",
        x = "",
        y = "Contratos realizados",
-       caption = "") +
+       caption = "Fonte: Observat√≥rio do Minist√©rio da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_classic() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
   theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5))
 
 #uasgs com maiores despesas totais
 uasg %>%
-  filter(`ForÁa Singular` == "ExÈrcito Brasileiro") %>% 
+  filter(`For√ßa Singular` == "Ex√©rcito Brasileiro") %>% 
   group_by(`Nome da UASG`) %>% 
   summarise(Total = sum(`Valor Total da Compra`)) %>% 
   arrange(-Total) %>% 
@@ -522,22 +753,22 @@ uasg %>%
   geom_bar(stat="identity", width=0.5, fill = c("darkgreen")) +
   scale_y_continuous(labels = label_dollar(prefix = "R$")) +
   scale_x_discrete(labels = label_wrap(width = 5))  +
-  labs(title = "Unidades do ExÈrcito Brasileiro com maiores despesas totais",
-       subtitle = "O Comando LogÌstico e o Comando Militar da AmazÙnia foram as unidades do EB com maiores despesas totais",
+  labs(title = "Unidades do Ex√©rcito Brasileiro com maiores despesas totais",
+       subtitle = "O Comando Log√≠stico e o Comando Militar da Amaz√¥nia foram as unidades do EB com maiores despesas totais",
        x = "",
        y = "Valor total contratado",
-       caption = "") +
+       caption = "Fonte: Observat√≥rio do Minist√©rio da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_classic() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
   theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5))
 
-#Os Hospitais Militares de S„o Paulo e de Porto Alegre foram as unidades que mais realizaram compras, mas o Comando LogÌstico e o Comando Militar da AmazÙnia foram as unidades do EB com maiores despesas totais.
+#Os Hospitais Militares de S√£o Paulo e de Porto Alegre foram as unidades que mais realizaram compras, mas o Comando Log√≠stico e o Comando Militar da Amaz√¥nia foram as unidades do EB com maiores despesas totais.
 
 ## MB
 
 #uasgs que realizaram mais compras
 uasg %>%
-  filter(`ForÁa Singular` == "Marinha do Brasil") %>% 
+  filter(`For√ßa Singular` == "Marinha do Brasil") %>% 
   count(`Nome da UASG`) %>% 
   arrange(-n) %>% 
   slice_max(n, n = 15) %>% 
@@ -549,14 +780,14 @@ uasg %>%
        subtitle = "A Base de Fuzileiros Navais do Rio Meriti e o Hospital Naval de Salvador foram as unidades que mais realizaram compras na MB",
        x = "",
        y = "Contratos realizados",
-       caption = "") +
+       caption = "Fonte: Observat√≥rio do Minist√©rio da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_classic() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
   theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5))
 
 #uasgs com maiores despesas totais
 uasg %>%
-  filter(`ForÁa Singular` == "Marinha do Brasil") %>% 
+  filter(`For√ßa Singular` == "Marinha do Brasil") %>% 
   group_by(`Nome da UASG`) %>% 
   summarise(Total = sum(`Valor Total da Compra`)) %>% 
   arrange(-Total) %>% 
@@ -570,7 +801,7 @@ uasg %>%
        subtitle = "A Diretoria de Abastecimento da Marinha foi a unidade naval com maiores despesas totais",
        x = "",
        y = "Valor total contratado",
-       caption = "") +
+       caption = "Fonte: Observat√≥rio do Minist√©rio da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_classic() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
   theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5))
@@ -581,7 +812,7 @@ uasg %>%
 
 #uasgs que realizaram mais compras
 uasg %>%
-  filter(`ForÁa Singular` == "ForÁa AÈrea Brasileira") %>% 
+  filter(`For√ßa Singular` == "For√ßa A√©rea Brasileira") %>% 
   count(`Nome da UASG`) %>% 
   arrange(-n) %>% 
   slice_max(n, n = 15) %>% 
@@ -589,18 +820,18 @@ uasg %>%
   ggplot(aes(`Nome da UASG`, n)) +
   geom_bar(stat="identity", width=0.5, fill = c("darkblue")) +
   scale_x_discrete(labels = label_wrap(width = 5))  +
-  labs(title = "Unidades da ForÁa AÈrea Brasileira que realizaram mais compras",
-       subtitle = "O Grupamento de Apoio de S„o Paulo foi a unidade que mais realizou compras na FAB",
+  labs(title = "Unidades da For√ßa A√©rea Brasileira que realizaram mais compras",
+       subtitle = "O Grupamento de Apoio de S√£o Paulo foi a unidade que mais realizou compras na FAB",
        x = "",
        y = "Contratos realizados",
-       caption = "") +
+       caption = "Fonte: Observat√≥rio do Minist√©rio da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_classic() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
   theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5))
 
 #uasgs com maiores despesas totais
 uasg %>%
-  filter(`ForÁa Singular` == "ForÁa AÈrea Brasileira") %>% 
+  filter(`For√ßa Singular` == "For√ßa A√©rea Brasileira") %>% 
   group_by(`Nome da UASG`) %>% 
   summarise(Total = sum(`Valor Total da Compra`)) %>% 
   arrange(-Total) %>% 
@@ -610,23 +841,23 @@ uasg %>%
   geom_bar(stat="identity", width=0.5, fill = c("darkblue")) +
   scale_y_continuous(labels = label_dollar(prefix = "R$")) +
   scale_x_discrete(labels = label_wrap(width = 5))  +
-  labs(title = "Unidades da ForÁa AÈrea Brasileira com maiores despesas totais",
-       subtitle = "O Centro de AquisiÁıes EspecÌficas foi a unidade da FAB com maiores despesas totais",
+  labs(title = "Unidades da For√ßa A√©rea Brasileira com maiores despesas totais",
+       subtitle = "O Centro de Aquisi√ß√µes Espec√≠ficas foi a unidade da FAB com maiores despesas totais",
        x = "",
        y = "Valor total contratado",
-       caption = "") +
+       caption = "Fonte: Observat√≥rio do Minist√©rio da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_classic() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
   theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5))
 
-#O Grupamento de Apoio de S„o Paulo foi a unidade que mais realizou compras na FAB, mas o Centro de AquisiÁıes EspecÌficas foi a unidade da FAB com maiores despesas totais.
+#O Grupamento de Apoio de S√£o Paulo foi a unidade que mais realizou compras na FAB, mas o Centro de Aquisi√ß√µes Espec√≠ficas foi a unidade da FAB com maiores despesas totais.
 
 #########################################################################################################
-####### Como as compras e os gastos de cada ForÁa Singular foram distribuÌdos pelo Brasil? ##############
+####### Como as compras e os gastos de cada For√ßa Singular foram distribu√≠dos pelo Brasil? ##############
 #########################################################################################################
 
-##Edita coluna MunicÌpio/UF para conter somente a UF
-uasg$`MunicÌpio/UF` <- str_sub(uasg$`MunicÌpio/UF`, start = -2) 
+##Edita coluna Munic√≠pio/UF para conter somente a UF
+uasg$`Munic√≠pio/UF` <- str_sub(uasg$`Munic√≠pio/UF`, start = -2) 
 
 ##Baixa limites do Brasil
 brasil <- read_country()
@@ -640,17 +871,17 @@ head(estados)
 
 ##EB: compras
 
-#Tabela de frequÍncia (j· renomeando a vari·vel)
+#Tabela de frequ√™ncia (j√° renomeando a vari√°vel)
 eb_uf_compras <- uasg %>%
-  filter(`ForÁa Singular` == "ExÈrcito Brasileiro") %>% 
-  count(`MunicÌpio/UF`) %>% 
-  rename(abbrev_state = `MunicÌpio/UF`)
+  filter(`For√ßa Singular` == "Ex√©rcito Brasileiro") %>% 
+  count(`Munic√≠pio/UF`) %>% 
+  rename(abbrev_state = `Munic√≠pio/UF`)
 
 #Junta no DF dos estados e renomeia N
 eb_uf_compras <- inner_join(estados, eb_uf_compras) %>% 
   rename("Total de compras realizadas" = n)
 
-#Inserindo par‚metros no mapa
+#Inserindo par√¢metros no mapa
 ggplot(eb_uf_compras) +
   geom_sf(aes(fill = `Total de compras realizadas`, col = `Total de compras realizadas`)) + #fill = preenchimento, col = contorno
   geom_sf(data = brasil, fill = "transparent", colour = "black") +
@@ -658,12 +889,12 @@ ggplot(eb_uf_compras) +
   scale_color_gradientn (colours = brewer.pal(9, "Greens")) +
   annotation_scale(location = "br") + #insere escala ("bl" = bottom right = canto direito inferior) +
   annotation_north_arrow (location = "tr", 
-                          style = north_arrow_nautical()) + #insere orientaÁ„o ("tr" = top right = canto direito superior)
-  labs(title = "Total de compras realizadas pelo ExÈrcito Brasileiro por estado",
-       subtitle = "Houve maior concentraÁ„o de compras no estado do Rio Grande do Sul",
+                          style = north_arrow_nautical()) + #insere orienta√ß√£o ("tr" = top right = canto direito superior)
+  labs(title = "Concentra√ß√£o de compras do Ex√©rcito Brasileiro por estado",
+       subtitle = "Houve maior concentra√ß√£o de compras no estado do Rio Grande do Sul",
        x = "",
        y = "",
-       caption = "") +
+       caption = "Fonte: Observat√≥rio do Minist√©rio da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_void() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
   theme(plot.subtitle=element_text(color = "black", size=18, vjust=0.5)) +
@@ -671,18 +902,18 @@ ggplot(eb_uf_compras) +
 
 ##EB: gastos
 
-#Tabela de frequÍncia (j· renomeando a vari·vel)
+#Tabela de frequ√™ncia (j√° renomeando a vari√°vel)
 eb_uf_gastos <- uasg %>%
-  filter(`ForÁa Singular` == "ExÈrcito Brasileiro") %>% 
-  group_by(`MunicÌpio/UF`) %>% 
+  filter(`For√ßa Singular` == "Ex√©rcito Brasileiro") %>% 
+  group_by(`Munic√≠pio/UF`) %>% 
   summarise(Total = sum(`Valor Total da Compra`)) %>% 
-  rename(abbrev_state = `MunicÌpio/UF`)
+  rename(abbrev_state = `Munic√≠pio/UF`)
 
 #Junta no DF dos estados e renomeia N
 eb_uf_gastos <- inner_join(estados, eb_uf_gastos) %>% 
   rename("Despesas Totais" = Total)
 
-#Inserindo par‚metros no mapa
+#Inserindo par√¢metros no mapa
 ggplot(eb_uf_gastos) +
   geom_sf(aes(fill = `Despesas Totais`, col = `Despesas Totais`)) + #fill = preenchimento, col = contorno
   geom_sf(data = brasil, fill = "transparent", colour = "black") +
@@ -690,12 +921,12 @@ ggplot(eb_uf_gastos) +
   scale_color_gradientn (colours = brewer.pal(9, "Greens")) +
   annotation_scale(location = "br") + #insere escala ("bl" = bottom right = canto direito inferior) +
   annotation_north_arrow (location = "tr", 
-                          style = north_arrow_nautical()) + #insere orientaÁ„o ("tr" = top right = canto direito superior)
-  labs(title = "Despesas do ExÈrcito Brasileiro por estado",
-       subtitle = "Houve maior concentraÁ„o de despesas nos estados do Amazonas e do Distrito Federal",
+                          style = north_arrow_nautical()) + #insere orienta√ß√£o ("tr" = top right = canto direito superior)
+  labs(title = "Concentra√ß√£o de gastos do Ex√©rcito Brasileiro por estado",
+       subtitle = "Houve maior concentra√ß√£o de gastos nos estados do Amazonas e do Distrito Federal",
        x = "",
        y = "",
-       caption = "") +
+       caption = "Fonte: Observat√≥rio do Minist√©rio da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_void() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
   theme(plot.subtitle=element_text(color = "black", size=18, vjust=0.5)) +
@@ -703,17 +934,17 @@ ggplot(eb_uf_gastos) +
 
 ##MB: compras
 
-#Tabela de frequÍncia (j· renomeando a vari·vel)
+#Tabela de frequ√™ncia (j√° renomeando a vari√°vel)
 mb_uf_compras <- uasg %>%
-  filter(`ForÁa Singular` == "Marinha do Brasil") %>% 
-  count(`MunicÌpio/UF`) %>% 
-  rename(abbrev_state = `MunicÌpio/UF`)
+  filter(`For√ßa Singular` == "Marinha do Brasil") %>% 
+  count(`Munic√≠pio/UF`) %>% 
+  rename(abbrev_state = `Munic√≠pio/UF`)
 
 #Junta no DF dos estados e renomeia N
 mb_uf_compras <- inner_join(estados, mb_uf_compras) %>% 
   rename("Total de compras realizadas" = n)
 
-#Inserindo par‚metros no mapa
+#Inserindo par√¢metros no mapa
 ggplot(mb_uf_compras) +
   geom_sf(aes(fill = `Total de compras realizadas`, col = `Total de compras realizadas`)) + #fill = preenchimento, col = contorno
   geom_sf(data = brasil, fill = "transparent", colour = "black") +
@@ -721,12 +952,12 @@ ggplot(mb_uf_compras) +
   scale_color_gradientn (colours = brewer.pal(9, "Reds")) +
   annotation_scale(location = "br") + #insere escala ("bl" = bottom right = canto direito inferior) +
   annotation_north_arrow (location = "tr", 
-                          style = north_arrow_nautical()) + #insere orientaÁ„o ("tr" = top right = canto direito superior)
-  labs(title = "Total de compras realizadas pela Marinha do Brasil por estado",
-       subtitle = "Houve maior concentraÁ„o de compras no estado do Rio de Janeiro",
+                          style = north_arrow_nautical()) + #insere orienta√ß√£o ("tr" = top right = canto direito superior)
+  labs(title = "Concentra√ß√£o de compras da Marinha do Brasil por estado",
+       subtitle = "Houve maior concentra√ß√£o de compras no estado do Rio de Janeiro",
        x = "",
        y = "",
-       caption = "") +
+       caption = "Fonte: Observat√≥rio do Minist√©rio da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_void() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
   theme(plot.subtitle=element_text(color = "black", size=18, vjust=0.5)) +
@@ -734,18 +965,18 @@ ggplot(mb_uf_compras) +
 
 ##MB: gastos
 
-#Tabela de frequÍncia (j· renomeando a vari·vel)
+#Tabela de frequ√™ncia (j√° renomeando a vari√°vel)
 mb_uf_gastos <- uasg %>%
-  filter(`ForÁa Singular` == "Marinha do Brasil") %>% 
-  group_by(`MunicÌpio/UF`) %>% 
+  filter(`For√ßa Singular` == "Marinha do Brasil") %>% 
+  group_by(`Munic√≠pio/UF`) %>% 
   summarise(Total = sum(`Valor Total da Compra`)) %>% 
-  rename(abbrev_state = `MunicÌpio/UF`)
+  rename(abbrev_state = `Munic√≠pio/UF`)
 
 #Junta no DF dos estados e renomeia N
 mb_uf_gastos <- inner_join(estados, mb_uf_gastos) %>% 
   rename("Despesas Totais" = Total)
 
-#Inserindo par‚metros no mapa
+#Inserindo par√¢metros no mapa
 ggplot(mb_uf_gastos) +
   geom_sf(aes(fill = `Despesas Totais`, col = `Despesas Totais`)) + #fill = preenchimento, col = contorno
   geom_sf(data = brasil, fill = "transparent", colour = "black") +
@@ -753,12 +984,12 @@ ggplot(mb_uf_gastos) +
   scale_color_gradientn (colours = brewer.pal(9, "Reds")) +
   annotation_scale(location = "br") + #insere escala ("bl" = bottom right = canto direito inferior) +
   annotation_north_arrow (location = "tr", 
-                          style = north_arrow_nautical()) + #insere orientaÁ„o ("tr" = top right = canto direito superior)
-  labs(title = "Despesas da Marinha do Brasil por estado",
-       subtitle = "Houve maior concentraÁ„o de despesas no estado do Rio de Janeiro",
+                          style = north_arrow_nautical()) + #insere orienta√ß√£o ("tr" = top right = canto direito superior)
+  labs(title = "Concentra√ß√£o de gastos da Marinha do Brasil por estado",
+       subtitle = "Houve maior concentra√ß√£o de gastos no estado do Rio de Janeiro",
        x = "",
        y = "",
-       caption = "") +
+       caption = "Fonte: Observat√≥rio do Minist√©rio da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_void() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
   theme(plot.subtitle=element_text(color = "black", size=18, vjust=0.5)) +
@@ -766,17 +997,17 @@ ggplot(mb_uf_gastos) +
 
 ##FAB: compras
 
-#Tabela de frequÍncia (j· renomeando a vari·vel)
+#Tabela de frequ√™ncia (j√° renomeando a vari√°vel)
 fab_uf_compras <- uasg %>%
-  filter(`ForÁa Singular` == "ForÁa AÈrea Brasileira") %>% 
-  count(`MunicÌpio/UF`) %>% 
-  rename(abbrev_state = `MunicÌpio/UF`)
+  filter(`For√ßa Singular` == "For√ßa A√©rea Brasileira") %>% 
+  count(`Munic√≠pio/UF`) %>% 
+  rename(abbrev_state = `Munic√≠pio/UF`)
 
 #Junta no DF dos estados e renomeia N
 fab_uf_compras <- inner_join(estados, fab_uf_compras) %>% 
   rename("Total de compras realizadas" = n)
 
-#Inserindo par‚metros no mapa
+#Inserindo par√¢metros no mapa
 ggplot(fab_uf_compras) +
   geom_sf(aes(fill = `Total de compras realizadas`, col = `Total de compras realizadas`)) + #fill = preenchimento, col = contorno
   geom_sf(data = brasil, fill = "transparent", colour = "black") +
@@ -784,12 +1015,12 @@ ggplot(fab_uf_compras) +
   scale_color_gradientn (colours = brewer.pal(9, "Blues")) +
   annotation_scale(location = "br") + #insere escala ("bl" = bottom right = canto direito inferior) +
   annotation_north_arrow (location = "tr", 
-                          style = north_arrow_nautical()) + #insere orientaÁ„o ("tr" = top right = canto direito superior)
-  labs(title = "Total de compras realizadas pela ForÁa AÈrea Brasileira por estado",
-       subtitle = "Houve maior concentraÁ„o de compras no estado de S„o Paulo",
+                          style = north_arrow_nautical()) + #insere orienta√ß√£o ("tr" = top right = canto direito superior)
+  labs(title = "Concentra√ß√£o de compras da For√ßa A√©rea Brasileira por estado",
+       subtitle = "Houve maior concentra√ß√£o de compras no estado de S√£o Paulo",
        x = "",
        y = "",
-       caption = "") +
+       caption = "Fonte: Observat√≥rio do Minist√©rio da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_void() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
   theme(plot.subtitle=element_text(color = "black", size=18, vjust=0.5)) +
@@ -797,18 +1028,18 @@ ggplot(fab_uf_compras) +
 
 ##FAB: gastos
 
-#Tabela de frequÍncia (j· renomeando a vari·vel)
+#Tabela de frequ√™ncia (j√° renomeando a vari√°vel)
 fab_uf_gastos <- uasg %>%
-  filter(`ForÁa Singular` == "ForÁa AÈrea Brasileira") %>% 
-  group_by(`MunicÌpio/UF`) %>% 
+  filter(`For√ßa Singular` == "For√ßa A√©rea Brasileira") %>% 
+  group_by(`Munic√≠pio/UF`) %>% 
   summarise(Total = sum(`Valor Total da Compra`)) %>% 
-  rename(abbrev_state = `MunicÌpio/UF`)
+  rename(abbrev_state = `Munic√≠pio/UF`)
 
 #Junta no DF dos estados e renomeia N
 fab_uf_gastos <- inner_join(estados, fab_uf_gastos) %>% 
   rename("Despesas Totais" = Total)
 
-#Inserindo par‚metros no mapa
+#Inserindo par√¢metros no mapa
 ggplot(fab_uf_gastos) +
   geom_sf(aes(fill = `Despesas Totais`, col = `Despesas Totais`)) + #fill = preenchimento, col = contorno
   geom_sf(data = brasil, fill = "transparent", colour = "black") +
@@ -816,12 +1047,12 @@ ggplot(fab_uf_gastos) +
   scale_color_gradientn (colours = brewer.pal(9, "Blues")) +
   annotation_scale(location = "br") + #insere escala ("bl" = bottom right = canto direito inferior) +
   annotation_north_arrow (location = "tr", 
-                          style = north_arrow_nautical()) + #insere orientaÁ„o ("tr" = top right = canto direito superior)
-  labs(title = "Despesas da ForÁa AÈrea Brasileira por estado",
-       subtitle = "Houve maior concentraÁ„o de despesas no estado do Rio de Janeiro",
+                          style = north_arrow_nautical()) + #insere orienta√ß√£o ("tr" = top right = canto direito superior)
+  labs(title = "Concentra√ß√£o de gastos da For√ßa A√©rea Brasileira por estado",
+       subtitle = "Houve maior concentra√ß√£o de gastos no estado do Rio de Janeiro",
        x = "",
        y = "",
-       caption = "") +
+       caption = "Fonte: Observat√≥rio do Minist√©rio da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_void() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
   theme(plot.subtitle=element_text(color = "black", size=18, vjust=0.5)) +
