@@ -13,6 +13,9 @@ library(ggspatial)
 library(geojsonio)
 library(geobr)
 library(ggpubr)
+library(arules)
+library(arulesViz)
+library(tm)
 
 #Desabilita notação científica
 options(scipen=999)
@@ -715,6 +718,56 @@ fornecedor %>%
   theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5))
 
 #Embora a empresa Vila Gugu Carnes tenha sido o fornecedor que mais realizou contratos com a FAB, a empresa Acácia Construções e Serviços foi responsável pelos maiores valores em contratos.
+
+#########################################################################################################
+################ O quanto as compras foram concentradas em determinados fornecedores? ###################
+#########################################################################################################
+
+#Modificando dados e gerando banco de transações
+sum(is.na(fornecedor2))
+
+fornecedor2 <- fornecedor %>% 
+  unite_("transações", c("Força Singular","Descrição do Item", "Razão Social"), sep = "/") %>% 
+  select("transações")
+
+#Registra as transações
+write.csv(fornecedor2,"transacoes.csv", quote = FALSE, row.names = TRUE)
+head(fornecedor2)
+
+tsc <- read.transactions(file="transacoes.csv", 
+                         rm.duplicates = TRUE, 
+                         format="basket",
+                         sep="/",
+                         cols=1)
+print(tsc)
+summary(tsc)
+
+#Passa o algoritmo
+regras <- apriori(tsc, 
+                  parameter = list(minlen=2, 
+                                   sup = 0.001, 
+                                   conf = 0.05, 
+                                   target="rules"))
+print(length(regras))
+summary(regras)
+inspect(regras)
+
+#Cria df
+regrasdf <- as(regras, "data.frame")
+regrasdf <- as_tibble(regrasdf)
+
+#Plot
+plot(regras[1:25], method="paracoord")
+
+#Exporta para edições manuais
+#write.csv(regrasdf, quote = FALSE, "regras.csv")
+
+
+#O QUE IMPORTA: {PRODUTO} => {FORNECEDOR}
+#CONFIANÇA E COUNT
+#OU SEJA: DAS AQUISIÇÕES MAIS FREQUENTES, COMO SE DEU A CONCENTRAÇÃO DE ITENS EM FORNECEDORES?
+#X% DAS COMPRAS DO ITEM TAL FORAM COM TAL FORNECEDOR
+#DESTAQUE: ÁGORA E FABIANA
 
 #########################################################################################################
 ##### Quais uasgs realizaram mais compras e quais tiveram maiores despesas totais? ######################
