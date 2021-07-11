@@ -93,6 +93,23 @@ fornecedor <- bind_rows(eb_fornecedor, mb_fornecedor, fab_fornecedor)
 
 rm(eb_fornecedor, mb_fornecedor, fab_fornecedor)
 
+## Formatando datas
+
+fornecedor$Data <- str_replace_all(fornecedor$Data, " de ", "")
+fornecedor$Data <- str_replace_all(fornecedor$Data, "mar.", "/3/")
+fornecedor$Data <- str_replace_all(fornecedor$Data, "abr.", "/4/")
+fornecedor$Data <- str_replace_all(fornecedor$Data, "mai.", "/5/")
+fornecedor$Data <- str_replace_all(fornecedor$Data, "jun.", "/6/")
+fornecedor$Data <- str_replace_all(fornecedor$Data, "jul.", "/7/")
+fornecedor$Data <- str_replace_all(fornecedor$Data, "ago.", "/8/")
+fornecedor$Data <- str_replace_all(fornecedor$Data, "set.", "/9/")
+fornecedor$Data <- str_replace_all(fornecedor$Data, "out.", "/10/")
+fornecedor$Data <- str_replace_all(fornecedor$Data, "nov.", "/11/")
+fornecedor$Data <- str_replace_all(fornecedor$Data, "dez.", "/12/")
+
+## Exportando base
+write.csv(fornecedor, file = "fornecedor.csv")
+
 ######################################################
 ############# Estatísticas Descritivas ###############
 #####################################################
@@ -231,8 +248,8 @@ fornecedor %>%
 fornecedor %>%
   filter(`Força Singular` == "Exército Brasileiro") %>% 
   count(`Descrição do Item`) %>% 
+  slice_max(n, n = 10) %>% 
   arrange(-n) %>% 
-  slice_max(n, n = 15) %>% 
   mutate(`Descrição do Item` = fct_reorder(`Descrição do Item`, n, .desc = TRUE)) %>%
   ggplot(aes(`Descrição do Item`, n)) +
   geom_bar(stat="identity", width=0.5, fill = c("darkgreen")) +
@@ -244,7 +261,9 @@ fornecedor %>%
        caption = "Fonte: Observatório do Ministério da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_classic() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
-  theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5))
+  theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5)) +
+  theme(axis.text.x=element_text(size=8, vjust=0.5)) +
+  theme(axis.text.y=element_text(size=8, vjust=0.5))
 
 #Itens que representaram os maiores gastos
 fornecedor %>%
@@ -252,7 +271,7 @@ fornecedor %>%
   group_by(`Descrição do Item`) %>% 
   summarise(Total = sum(`Valor Total do Item`)) %>% 
   arrange(-Total) %>% 
-  slice_max(Total, n = 15) %>% 
+  slice_max(Total, n = 10) %>% 
   mutate(`Descrição do Item` = fct_reorder(`Descrição do Item`, Total, .desc = TRUE)) %>%
   ggplot(aes(`Descrição do Item`, Total)) +
   geom_bar(stat="identity", width=0.5, fill = c("darkgreen")) +
@@ -265,7 +284,9 @@ fornecedor %>%
        caption = "Fonte: Observatório do Ministério da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_classic() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
-  theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5))
+  theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5)) +
+  theme(axis.text.x=element_text(size=8, vjust=0.5)) +
+  theme(axis.text.y=element_text(size=8, vjust=0.5))
 
 #Embora os itens mais adquiridos pelo EB tenham sido álcool e luvas de cirurgia, locação de bens móveis representou os maiores gastos da Força.
 
@@ -276,7 +297,7 @@ fornecedor %>%
   filter(`Força Singular` == "Marinha do Brasil") %>% 
   count(`Descrição do Item`) %>% 
   arrange(-n) %>% 
-  slice_max(n, n = 15) %>% 
+  slice_max(n, n = 10) %>% 
   mutate(`Descrição do Item` = fct_reorder(`Descrição do Item`, n, .desc = TRUE)) %>%
   ggplot(aes(`Descrição do Item`, n)) +
   geom_bar(stat="identity", width=0.5, fill = c("darkred")) +
@@ -288,7 +309,9 @@ fornecedor %>%
        caption = "Fonte: Observatório do Ministério da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_classic() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
-  theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5))
+  theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5)) +
+  theme(axis.text.x=element_text(size=7, vjust=0.5)) +
+  theme(axis.text.y=element_text(size=7, vjust=0.5))
 
 # Itens que representaram os maiores gastos
 fornecedor %>%
@@ -296,20 +319,22 @@ fornecedor %>%
   group_by(`Descrição do Item`) %>% 
   summarise(Total = sum(`Valor Total do Item`)) %>% 
   arrange(-Total) %>% 
-  slice_max(Total, n = 15) %>% 
+  slice_max(Total, n = 10) %>% 
   mutate(`Descrição do Item` = fct_reorder(`Descrição do Item`, Total, .desc = TRUE)) %>%
   ggplot(aes(`Descrição do Item`, Total)) +
   geom_bar(stat="identity", width=0.5, fill = c("darkred")) +
   scale_y_continuous(labels = label_dollar(prefix = "R$")) +
   scale_x_discrete(labels = label_wrap(width = 5))  +
   labs(title = "Total de despesas por item adquirido pela Marinha do Brasil",
-       subtitle = "Aventais e reagentes representaram o maior gasto da MB",
+       subtitle = "Reagentes e aventais representaram o maior gasto da MB",
        x = "",
        y = "Custo total do item",
        caption = "Fonte: Observatório do Ministério da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_classic() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
-  theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5))
+  theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5)) +
+  theme(axis.text.x=element_text(size=7, vjust=0.5)) +
+  theme(axis.text.y=element_text(size=7, vjust=0.5))
 
 #Embora manutenção e reparo de embarcações tenham sido os serviços mais adquiridos pela MB, aventais e reagentes representaram os maiores gastos da Força.
 
@@ -320,7 +345,7 @@ fornecedor %>%
   filter(`Força Singular` == "Força Aérea Brasileira") %>% 
   count(`Descrição do Item`) %>% 
   arrange(-n) %>% 
-  slice_max(n, n = 15) %>% 
+  slice_max(n, n = 10) %>% 
   mutate(`Descrição do Item` = fct_reorder(`Descrição do Item`, n, .desc = TRUE)) %>%
   ggplot(aes(`Descrição do Item`, n)) +
   geom_bar(stat="identity", width=0.5, fill = c("darkblue")) +
@@ -332,7 +357,9 @@ fornecedor %>%
        caption = "Fonte: Observatório do Ministério da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_classic() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
-  theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5))
+  theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5)) +
+  theme(axis.text.x=element_text(size=7, vjust=0.5)) +
+  theme(axis.text.y=element_text(size=7, vjust=0.5))
 
 #Itens que representaram os maiores gastos
 fornecedor %>%
@@ -340,20 +367,22 @@ fornecedor %>%
   group_by(`Descrição do Item`) %>% 
   summarise(Total = sum(`Valor Total do Item`)) %>% 
   arrange(-Total) %>% 
-  slice_max(Total, n = 15) %>% 
+  slice_max(Total, n = 10) %>% 
   mutate(`Descrição do Item` = fct_reorder(`Descrição do Item`, Total, .desc = TRUE)) %>%
   ggplot(aes(`Descrição do Item`, Total)) +
   geom_bar(stat="identity", width=0.5, fill = c("darkblue")) +
   scale_y_continuous(labels = label_dollar(prefix = "R$")) +
   scale_x_discrete(labels = label_wrap(width = 5))  +
-  labs(title = "Total de despesas por item adquirido pela Força Aérea Brasileira",
+  labs(title = "Total de despesas por item adquirido pela \nForça Aérea Brasileira",
        subtitle = "Serviços de engenharia representaram o maior gasto da FAB",
        x = "",
        y = "Custo total do item",
        caption = "Fonte: Observatório do Ministério da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_classic() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
-  theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5))
+  theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5)) +
+  theme(axis.text.x=element_text(size=7, vjust=0.5)) +
+  theme(axis.text.y=element_text(size=7, vjust=0.5))
 
 #Embora o item mais adquirido pela FAB tenha sido álcool etílico, serviços de engenharia representaram o maior gasto da Força.
 
@@ -594,19 +623,19 @@ fornecedor %>%
   filter(`Força Singular` == "Exército Brasileiro") %>% 
   count(`Razão Social`) %>% 
   arrange(-n) %>% 
-  slice_max(n, n = 15) %>% 
-  mutate(`Razão Social` = fct_reorder(`Razão Social`, n, .desc = TRUE)) %>%
+  slice_max(n, n = 10) %>% 
+  mutate(`Razão Social` = fct_reorder(`Razão Social`, n, .desc = FALSE)) %>%
   ggplot(aes(`Razão Social`, n)) +
   geom_bar(stat="identity", width=0.5, fill = c("darkgreen")) +
-  scale_x_discrete(labels = label_wrap(width = 5))  +
-  labs(title = "Fornecedores mais contratados pelo Exército Brasileiro",
-       subtitle = "Fabiana Aguiar da Costa da Silva e Ágora Produção de Eventos foram os fornecedores mais contratados pelo EB",
+  labs(title = "Fornecedores mais contratados \npelo Exército Brasileiro",
+       subtitle = "Fabiana Aguiar da Costa da Silva e Ágora Produção \nde Eventos foram os fornecedores mais contratados \npelo EB",
        x = "",
        y = "Contratos realizados",
        caption = "Fonte: Observatório do Ministério da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_classic() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
-  theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5))
+  theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5)) +
+  coord_flip()
 
 #Fornecedores que representaram os maiores gastos
 fornecedor %>%
@@ -614,20 +643,20 @@ fornecedor %>%
   group_by(`Razão Social`) %>% 
   summarise(Total = sum(`Valor Total do Item`)) %>% 
   arrange(-Total) %>% 
-  slice_max(Total, n = 15) %>% 
-  mutate(`Razão Social` = fct_reorder(`Razão Social`, Total, .desc = TRUE)) %>%
+  slice_max(Total, n = 10) %>% 
+  mutate(`Razão Social` = fct_reorder(`Razão Social`, Total, .desc = FALSE)) %>%
   ggplot(aes(`Razão Social`, Total)) +
   geom_bar(stat="identity", width=0.5, fill = c("darkgreen")) +
   scale_y_continuous(labels = label_dollar(prefix = "R$")) +
-  scale_x_discrete(labels = label_wrap(width = 5))  +
-  labs(title = "Fornecedores que representaram os maiores contratos com o Exército Brasileiro",
-       subtitle = "A empresa Ágora Produção de Eventos representou os maiores contratos com o EB",
+  labs(title = "Fornecedores que representaram \nos maiores contratos com o \nExército Brasileiro",
+       subtitle = "A empresa Ágora Produção de Eventos representou \nos maiores contratos com o EB",
        x = "",
        y = "Valor total contratado",
        caption = "Fonte: Observatório do Ministério da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_classic() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
-  theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5))
+  theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5)) +
+  coord_flip()
 
 #Fabiana Aguiar da Costa da Silva realizou o maior número de contratos com o EB, seguida da empresa Ágora Produção de Eventos. Essa última, entretanto, foi a que obteve contratos com os maiores valores.
 
@@ -638,19 +667,19 @@ fornecedor %>%
   filter(`Força Singular` == "Marinha do Brasil") %>% 
   count(`Razão Social`) %>% 
   arrange(-n) %>% 
-  slice_max(n, n = 15) %>% 
-  mutate(`Razão Social` = fct_reorder(`Razão Social`, n, .desc = TRUE)) %>%
+  slice_max(n, n = 10) %>% 
+  mutate(`Razão Social` = fct_reorder(`Razão Social`, n, .desc = FALSE)) %>%
   ggplot(aes(`Razão Social`, n)) +
   geom_bar(stat="identity", width=0.5, fill = c("darkred")) +
-  scale_x_discrete(labels = label_wrap(width = 5))  +
-  labs(title = "Fornecedores mais contratados pela Marinha do Brasil",
+  labs(title = "Fornecedores mais contratados pela \nMarinha do Brasil",
        subtitle = "A empresa Medisil foi o fornecedor mais contratado pela MB",
        x = "",
        y = "Contratos realizados",
        caption = "Fonte: Observatório do Ministério da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_classic() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
-  theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5))
+  theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5)) +
+  coord_flip()
 
 #Fornecedores que representaram os maiores gastos
 fornecedor %>%
@@ -658,20 +687,20 @@ fornecedor %>%
   group_by(`Razão Social`) %>% 
   summarise(Total = sum(`Valor Total do Item`)) %>% 
   arrange(-Total) %>% 
-  slice_max(Total, n = 15) %>% 
-  mutate(`Razão Social` = fct_reorder(`Razão Social`, Total, .desc = TRUE)) %>%
+  slice_max(Total, n = 10) %>% 
+  mutate(`Razão Social` = fct_reorder(`Razão Social`, Total, .desc = FALSE)) %>%
   ggplot(aes(`Razão Social`, Total)) +
   geom_bar(stat="identity", width=0.5, fill = c("darkred")) +
   scale_y_continuous(labels = label_dollar(prefix = "R$")) +
-  scale_x_discrete(labels = label_wrap(width = 5))  +
-  labs(title = "Fornecedores que representaram os maiores contratos com a Marinha do Brasil",
-       subtitle = "A empresa Lang e Filhos representou os maiores contratos com a MB",
+  labs(title = "Fornecedores que representaram os \nmaiores contratos com a Marinha do \nBrasil",
+       subtitle = "A empresa Lang e Filhos representou os maiores contratos com \na MB",
        x = "",
        y = "Valor total contratado",
        caption = "Fonte: Observatório do Ministério da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_classic() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
-  theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5))
+  theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5)) +
+  coord_flip()
 
 #Embora a empresa Medisil tenha sido o fornecedor que mais realizou contratos com a MB, a empresa Lang e Filho foi responsável pelos maiores valores em contratos.
 
@@ -682,19 +711,19 @@ fornecedor %>%
   filter(`Força Singular` == "Força Aérea Brasileira") %>% 
   count(`Razão Social`) %>% 
   arrange(-n) %>% 
-  slice_max(n, n = 15) %>% 
-  mutate(`Razão Social` = fct_reorder(`Razão Social`, n, .desc = TRUE)) %>%
+  slice_max(n, n = 10) %>% 
+  mutate(`Razão Social` = fct_reorder(`Razão Social`, n, .desc = FALSE)) %>%
   ggplot(aes(`Razão Social`, n)) +
   geom_bar(stat="identity", width=0.5, fill = c("darkblue")) +
-  scale_x_discrete(labels = label_wrap(width = 5))  +
-  labs(title = "Fornecedores mais contratados pela Força Aérea Brasileira",
+  labs(title = "Fornecedores mais contratados pela Força \nAérea Brasileira",
        subtitle = "A empresa Vila Gugua Carnes foi o fornecedor mais contratado pela FAB",
        x = "",
        y = "Contratos realizados",
        caption = "Fonte: Observatório do Ministério da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_classic() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
-  theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5))
+  theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5)) +
+  coord_flip()
 
 #Fornecedores que representaram os maiores gastos
 fornecedor %>%
@@ -702,20 +731,20 @@ fornecedor %>%
   group_by(`Razão Social`) %>% 
   summarise(Total = sum(`Valor Total do Item`)) %>% 
   arrange(-Total) %>% 
-  slice_max(Total, n = 15) %>% 
-  mutate(`Razão Social` = fct_reorder(`Razão Social`, Total, .desc = TRUE)) %>%
+  slice_max(Total, n = 10) %>% 
+  mutate(`Razão Social` = fct_reorder(`Razão Social`, Total, .desc = FALSE)) %>%
   ggplot(aes(`Razão Social`, Total)) +
   geom_bar(stat="identity", width=0.5, fill = c("darkblue")) +
   scale_y_continuous(labels = label_dollar(prefix = "R$")) +
-  scale_x_discrete(labels = label_wrap(width = 5))  +
-  labs(title = "Fornecedores que representaram os maiores contratos com a Força Aérea Brasileira",
-       subtitle = "A empresa Acácia Construções e Serviços representou os maiores contratos com a FAB",
+  labs(title = "Fornecedores que representaram os maiores contratos \ncom a Força Aérea Brasileira",
+       subtitle = "A empresa Acácia Construções e Serviços representou os maiores contratos \ncom a FAB",
        x = "",
        y = "Valor total contratado",
        caption = "Fonte: Observatório do Ministério da Defesa (https://observatoriomd.irid.ufrj.br)") +
   theme_classic() +
   theme(plot.title=element_text(color = "black", size=20, vjust=0.5, face = "bold")) +
-  theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5))
+  theme(plot.subtitle=element_text(color = "black", size=14, vjust=0.5)) +
+  coord_flip()
 
 #Embora a empresa Vila Gugu Carnes tenha sido o fornecedor que mais realizou contratos com a FAB, a empresa Acácia Construções e Serviços foi responsável pelos maiores valores em contratos.
 
@@ -742,6 +771,8 @@ tsc <- read.transactions(file="transacoes.csv",
 print(tsc)
 summary(tsc)
 
+itemFrequencyPlot(tsc, topN = 10)
+
 #Passa o algoritmo
 regras <- apriori(tsc, 
                   parameter = list(minlen=2, 
@@ -752,13 +783,17 @@ print(length(regras))
 summary(regras)
 inspect(regras)
 
+
+
 #Cria df
 regrasdf <- as(regras, "data.frame")
 regrasdf <- as_tibble(regrasdf)
 
 #Plot
-plot(regras[1:25], method="paracoord")
-
+plot(regras[1:25], 
+     measure = "count",
+     method="paracoord")
+?plot
 #Exporta para edições manuais
 #write.csv(regrasdf, quote = FALSE, "regras.csv")
 
